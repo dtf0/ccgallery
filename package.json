@@ -1,0 +1,14 @@
+{
+  "name": "ccgallery",
+  "version": "1.0.0",
+  "description": "A simple web gallery generator",
+  "author": "Jason Baker",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "build_gallery": "node src/resize.js"
+  },
+  "dependencies": {
+    "sharp": "^0.34.5"
+  }
+}

@@ -10,7 +10,8 @@ Setup
 
 1. Install [nodejs](https://nodejs.org/en) and [npm](https://www.npmjs.com/) with your package manager (such as [Homebrew](https://brew.sh/) for MacOS)
 2. Run `npm install` in the root folder of this project
-3. More here later!!
+3. Run `npm run build_gallery` to build the gallery
+99. More here later!!
 
 Photo Licensing
 ===============
@@ -76,3 +77,4 @@ Credits
 =======
 
 - [CloudConvert's video to gif converter](https://cloudconvert.com/mov-to-gif) was used to make the demo gif
+- [Sharp image processing library](https://sharp.pixelplumbing.com/) resizes images

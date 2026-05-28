@@ -1,0 +1,63 @@
+* { margin:0; padding:0; color:#545454; font-family:Verdana,Geneva,sans-serif; }
+/*HTML, BODY { position:relative; overflow:hidden; }*/
+BODY { width:100%; height:100vh; background-color:gray; border:1% solid red; }
+
+#bg { position:fixed; background-color:white; z-index:1; overflow:hidden; 
+	width:calc(100vw); height:calc(100vh); }
+#bg IMG { margin:2px; position:absolute; }
+
+#preloader { z-index:100; width:32px; height:32px; position:absolute; opacity:0.0; }
+
+#photooverlay { z-index:110; opacity:0.0; position:absolute; }
+#photooverlay .footer { background: linear-gradient(to right,rgba(0,0,0,0), rgba(0,0,0,0.5));
+	height:20px; width:25%; position:absolute; bottom:-1px; right:-1px; text-align:right; padding-right:5px; }
+#photooverlay A { color:white; text-decoration:none; }
+#photooverlay A:hover { color:white; text-decoration:underline; }
+
+#pagefooter { width:100%; height:40px; position:absolute; left:0px; bottom:0px; z-index:300; background-color:white; }
+#pagefooter .title { font-size:18px; margin-left:10px; margin-top:10px; color:black; float:left; }
+#pagefooter .links { padding-top:12px; float:right; margin-right:5px; }
+#pagefooter .links A { font-size:12px; text-decoration:none; margin-right:5px; background-color:white; color:#545454; 
+	border-radius:4px; padding:3px 10px; border:1px solid #545454; }
+#pagefooter .links A:hover { text-decoration:none; background-color:#545454; color:white; border:1px solid transparent; }
+#pagefooter .links A I { margin-right:5px; color:#545454; }
+#pagefooter .links A:hover I { color:white;}
+#pagefooter .icons { float:right; padding-top:8px; padding-right:10px; }
+.icons A { text-decoration:none; }
+.icons A.maillink :hover { color:#FFCC00; }
+.icons A.fblink :hover { color:#45619D; }
+.icons A.iglink :hover { color:#D731C1; }
+.icons A.ytlink :hover { color:#E92618; }
+.icons A.lilink :hover { color:#1883BB; }
+.icons A.ghlink :hover { color:black; }
+.icons A.spotifylink :hover { color:#1ED760; }
+.icons A.tumblrlink :hover { color:#35455C; }
+.icons A.refreshlink :hover { color:#2b49ac; }
+.icons I { font-size:24px; color:#545454; margin-left:3px; margin-right:3px; }
+.icons IMG { width:24px; height:24px; vertical-align:text-bottom; }
+
+#pagefooter .icons A.refreshlink I { font-size:20px; }
+
+.floatingContent { background:white; max-width:500px; height:70%; max-height:90%; position:absolute; z-index:200; 
+	right:100px; text-align:justify; font-size:14px; padding:10px; border-radius:4px; box-shadow:0px 0px 14px #545454; 
+	padding-bottom:20px; }
+.floatingContent .content { overflow-y:auto; overflow-x:hidden; max-height:100%; padding:10px; }
+.floatingContent P { margin-bottom:5px; margin-top:5px; }
+
+#about { bottom:-100%; }
+#about P, #about UL { margin-bottom:20px; }
+#about UL { margin-left:20px; }
+#about UL LI { margin-bottom:10px; }
+#about UL LI A, #about P A { text-decoration:none; border-bottom:1px dotted black; padding-bottom:1px; }
+#about UL LI A:hover, #about P A:hover  { border:0; }
+#about .headshot { margin:20px; margin-left:12.5%; width:75%; }
+#about .icons { width:100%; text-align:center; }
+
+@media (max-width:641px) {
+	#pagefooter { top:0px; bottom:unset; display:none; }
+	#pagefooter .title { font-size:12px; }
+	#bg { margin:0; }
+	.icons I { font-size:24px; margin-left:5px; margin-right:5px; }
+	.floatingContent { left:5%; top:5%; width:calc(90% - 20px); height:auto; margin-bottom:30px; max-width:none; 
+		max-height:none; position:relative; font-size:12px; }
+}
