@@ -6,7 +6,8 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "build_gallery": "node src/resize.js"
+    "build_gallery": "node src/resize.js",
+    "test_build_gallery": "node src/resize.js example-images dist/gallery"
   },
   "dependencies": {
     "sharp": "^0.34.5"
