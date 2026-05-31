@@ -21,39 +21,40 @@ class CCGalleryThumbnail {
 	imgData = null;
 	x = null;
 	y = null;
-	thumbnailImage = null;
 
 	constructor(ccGallery, imgData, x, y) {
 		this.ccGallery = ccGallery;
 		this.imgData = imgData;
 		this.x = x;
-		this.y = y;
-		
-		this.thumbnailImage = this.createThumbnailImageElement(imgData, x, y);
+		this.y = y;		
 	}
 
-	createThumbnailImageElement(imgData, x, y) {
+	destroy() {
+		this.ccGallery = null;
+		this.imgData = null;
+	}
+
+	createThumbnailImageElement() {
 		let ccThumbnail = this;
 
 		let thumbnailImg = document.createElement('img');		
 		thumbnailImg.ccThumbnail = this;
 
-		thumbnailImg.src = this.ccGallery.urlPrefix + "/" + imgData.thumbnail.file;
+		thumbnailImg.src = this.ccGallery.urlPrefix + "/" + this.imgData.thumbnail.file;
+
 		thumbnailImg.onload = this.handleOnLoad;
-		if (!ccGallery.isMobile) {
+		if (!this.ccGallery.isMobile) {
 			thumbnailImg.onmouseover = this.handleMouseOver;
 			thumbnailImg.onmouseout = this.handleMouseOut;
 		}
 		thumbnailImg.onclick = this.handleOnClick;
 
-		thumbnailImg.style.width = imgData.thumbnail.width + "px";
-		thumbnailImg.style.height = imgData.thumbnail.height + "px";
-		thumbnailImg.style.left = x + "px";
-		thumbnailImg.style.top = y + "px";
+		thumbnailImg.style.width = this.imgData.thumbnail.width + "px";
+		thumbnailImg.style.height = this.imgData.thumbnail.height + "px";
+		thumbnailImg.style.left = this.x + "px";
+		thumbnailImg.style.top = this.y + "px";
 		thumbnailImg.style.opacity = "0.0";
 		thumbnailImg.style.zindex = 10;
-
-		this.thumbnailImg = thumbnailImg;
 
 		return thumbnailImg;
 	}
@@ -106,6 +107,14 @@ class CCGalleryBigImage {
 		this.bigImageConfig = this.calculateBigImageConfig(ccGallery, ccThumbnail.imgData);
 	}
 
+	destroy() {
+		this.ccGallery = null;
+		this.ccThumbnail = null;
+		this.bigImageConfig = null;
+		this.scaledImage = null;
+		this.bigImage = null;
+	}
+
 	// first we show a image scaling operation that's just the 
 	// thumbnail scaling up to the "big image" size
 	showScaledImage() {
@@ -114,6 +123,7 @@ class CCGalleryBigImage {
 		scaledImage.ccBigImage = this;
 
 		scaledImage.src = this.ccGallery.urlPrefix + "/" + this.ccThumbnail.imgData.thumbnail.file;
+
 		scaledImage.onload = this.handleScaledImageLoad;
 		scaledImage.onclick = () => { this.ccBigImage.ccGallery.hideBigImage; };
 		
@@ -132,8 +142,7 @@ class CCGalleryBigImage {
 	handleScaledImageLoad() {
 		let ccBigImage = this.ccBigImage;
 		let ccGallery = this.ccBigImage.ccGallery;
-		ccGallery.showLoading();
-		ccGallery.showPhotoOverlay(this.ccBigImage.bigImageConfig);
+		ccGallery.showLoading();		
 
 		let bigImageConfig = this.ccBigImage.bigImageConfig;		
 		let animationConfig = {
@@ -150,11 +159,14 @@ class CCGalleryBigImage {
 	}
 
 	showBigImage() {
+		this.ccGallery.showPhotoOverlay(this.bigImageConfig);
+
 		let bigImage = document.createElement('img');
 		bigImage.id = "bigImage";
 		bigImage.ccBigImage = this;
 
 		bigImage.src = this.ccGallery.urlPrefix + "/" + this.ccThumbnail.imgData.original.file;
+
 		bigImage.onload = this.handleBigImageLoad;
 		bigImage.onclick = () => { this.ccGallery.hideBigImage(); };
 		
@@ -235,6 +247,7 @@ class CCGallery {
 	containerId = null;
 	preloaderId = null;
 	photoOverlayId = null;
+	galleryName = null;
 
 	isMobile = null;
 	onImageLoadOpacity = 1.0;
@@ -243,21 +256,34 @@ class CCGallery {
 	lastBigImage = null;
 	thumbnails = [];
 
-	constructor(containerId, preloaderId, photoOverlayId) {
+	constructor(containerId, preloaderId, photoOverlayId, galleryName) {
 		this.containerId = containerId;
 		this.preloaderId = preloaderId;
 		this.photoOverlayId = photoOverlayId;
+		this.galleryName = galleryName;
 
 		this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);		
 		this.onImageLoadOpacity = this.isMobile ? 1.0 : 0.5;
-		this.urlPrefix = "gallery"
-		console.log("isMobile: " + CCGallery.isMobile);
+		this.urlPrefix = "gallery/" + galleryName;
+
+		console.log("isMobile: " + this.isMobile);
+
+		this.galleryContainer = document.getElementById(this.containerId);
 	}
 
-	initializePageHandlers() {
-		window.ccGallery = this;
-		window.onload = this.firstLoadHandler;
-		window.onresize = this.resetImages;
+	async load() {
+		let data = await CCUtil.loadJSON(this.urlPrefix + "/galleries.json");
+		this.name = data.name;
+		this.images = data.images;		
+		this.resetImages();
+	}
+
+	unload() {
+		this.hideBigImage();
+		for (let thumbnail of this.thumbnails) {
+			thumbnail.destroy();
+		}
+		this.thumbnails = [];		
 	}
 
 	showBigImage(ccThumbnail) {
@@ -271,22 +297,11 @@ class CCGallery {
 		this.hideLoading();
 		if (this.lastBigImage) {
 			this.lastBigImage.hide();
+			this.lastBigImage.destroy();
 			this.lastBigImage = null;
 		}		
 		this.hidePhotoOverlay();		
-	}	
-
-	async firstLoadHandler() {
-		let ccGallery = window.ccGallery;
-		ccGallery.galleryContainer = document.getElementById(ccGallery.containerId);
-		
-		let data = await CCUtil.loadJSON(ccGallery.urlPrefix + "/galleries.json");
-		ccGallery.name = data.name;
-		ccGallery.images = data.images;
-		console.log("gallery name: " + ccGallery.name + ", images:", ccGallery.images);
-		
-		ccGallery.resetImages();
-	}
+	}		
 
 	showLoading() {
 		$("#" + this.preloaderId).animate( { "opacity":'1.0' }, "slow");
@@ -301,11 +316,14 @@ class CCGallery {
 		let overlay = document.getElementById(this.photoOverlayId);
 		overlay.style.width = bigImageConfig.w + "px";
 		overlay.style.left = bigImageConfig.x + "px";
-		overlay.style.top = (bigImageConfig.y + bigImageConfig.h) + "px";
-		overlay.style.opacity = "1.0";
+		console.log("overlay", { "x": overlay });
+		let topStyle = (bigImageConfig.y + bigImageConfig.h) - overlay.offsetHeight;
+		overlay.style.top = topStyle + "px";
 		overlay.style.zIndex = 200;
 		overlay.ccGallery = this;
-		overlay.onclick = () => { this.ccGallery.hideBigImage; };
+		overlay.onclick = () => { this.hideBigImage; };
+
+		$("#" + this.photoOverlayId).animate( { "opacity":'1.0' }, "slow");
 	}
 
 	hidePhotoOverlay(bigImageConfig) {
@@ -341,7 +359,7 @@ class CCGallery {
 				}
 
 				let ccThumbnail = new CCGalleryThumbnail(this, imgData, currentThumbnailX, currentThumbnailY);
-				this.galleryContainer.appendChild(ccThumbnail.thumbnailImage);				
+				this.galleryContainer.appendChild(ccThumbnail.createThumbnailImageElement());				
 				this.thumbnails.push(ccThumbnail);
 
 				currentThumbnailX += imgData.thumbnail.width + 4;
@@ -352,12 +370,60 @@ class CCGallery {
 	}
 }
 
-class CCGalleryInfo {
-	constructor(name, images) {
-		this.name = name;
-		this.images = images;
+class CCGalleryManager {
+	containerId = null;
+	preloaderId = null;
+	photoOverlayId = null;
+	galleries = [];
+	currentGallery = null;
+	currentGalleryIndex = 0;
+
+	constructor(containerId, preloaderId, photoOverlayId) {
+		this.containerId = containerId;
+		this.preloaderId = preloaderId;
+		this.photoOverlayId = photoOverlayId;
+	}
+
+	initializePageHandlers() {
+		window.ccGalleryManager = this;
+		window.onload = () => { this.firstLoadHandler(); };
+		window.onresize = this.resetImages;
+	}
+
+	async firstLoadHandler() {
+		let galleriesIndex = await CCUtil.loadJSON("gallery/galleries-index.json");
+		console.log("galleriesIndex", galleriesIndex);
+		for (let galleryName of galleriesIndex.galleryNames) {
+			console.log("Loading gallery '" + galleryName + "'");
+			let ccGallery = new CCGallery(this.containerId, this.preloaderId, this.photoOverlayId, galleryName);
+			if (this.currentGallery == null) {
+				this.currentGallery = ccGallery;
+				ccGallery.load();
+			}
+			this.galleries.push(ccGallery);
+		}
+		this.initializeMenu();
+	}
+
+	initializeMenu() {
+		let menuButton = document.getElementById("menuButton");
+		menuButton.onclick = () => {
+			console.log("menu clicked");
+			if (this.currentGallery != null) {
+				this.currentGallery.unload();
+			}
+			if (this.galleries.length > 0) {
+				this.currentGalleryIndex += 1;
+				if (this.currentGalleryIndex == this.galleries.length) {
+					this.currentGalleryIndex = 0;
+				}
+				this.currentGallery = this.galleries[this.currentGalleryIndex];
+				this.currentGallery.load();
+				console.log("Loading gallery: " + this.currentGallery.galleryName);
+			}
+		};
 	}
 }
 
-var gallery = new CCGallery("bg", "preloader", "photooverlay");
-gallery.initializePageHandlers();
+var galleryManager = new CCGalleryManager("bg", "preloader", "photooverlay");
+galleryManager.initializePageHandlers();
