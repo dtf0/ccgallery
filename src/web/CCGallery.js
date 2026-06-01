@@ -219,6 +219,10 @@ export class CCGalleryBigImage {
 
 		var newX = Math.floor((galleryContainer.clientWidth - newW) / 2.0);
 		var newY = Math.floor((galleryContainer.clientHeight - newH) / 2.0);
+		// our container window is purposely off center by 50 pixels
+		// so move the image up 50 pixels to match the container window's
+		// -50 offset 
+		newY -= 50;
 
 		console.log("Original dims: " + ow + "x" + oh + ", Scaled: " + newW + "x" + newH);
 		console.log("New placement: " + newX + "x" + newY);
@@ -271,7 +275,8 @@ export class CCGallery {
 		for (let thumbnail of this.thumbnails) {
 			thumbnail.destroy();
 		}
-		this.thumbnails = [];		
+		this.thumbnails = [];
+		CCUtil.removeElementChildren(this.config.galleryParentId);		
 	}
 
 	showBigImage(ccThumbnail) {
@@ -316,7 +321,6 @@ export class CCGallery {
 		this.photoOverlay.style.left = bigImageConfig.x + "px";		
 		this.photoOverlay.style.top = topStyle + "px";
 		this.photoOverlay.style.zIndex = 200;
-		this.photoOverlay.ccGallery = this;
 		this.photoOverlay.onclick = () => { this.hideBigImage; };
 
 		$(this.photoOverlay).animate( { "opacity":'1.0' }, "slow");
@@ -365,6 +369,137 @@ export class CCGallery {
 	}
 }
 
+export class CCMenuManager {
+	config = null;
+	galleryNames = [];
+	galleryManager = null;
+	currentGalleryIndex = 0;	
+	menuListWindow = null;
+	
+	constructor(ccGalleryManager, ccGalleryConfig, galleryNames) {
+		this.galleryManager = ccGalleryManager;
+		this.config = ccGalleryConfig;
+		if (galleryNames != null) {
+			this.galleryNames = galleryNames;
+		}
+	}
+
+	initializeMenu() {
+		let menuContainer = document.createElement("div");
+		menuContainer.id = this.config.menuContainerId;
+
+		let menuActivationLink = document.createElement("a");
+		menuActivationLink.innerHTML = this.config.menuButtonContent;
+		menuActivationLink.onclick = () => { this.showMenuList(); };
+		menuContainer.appendChild(menuActivationLink);
+
+		this.menuListWindowHolder = document.createElement("div");
+		this.menuListWindowHolder.id = "ccGalleryMenuWindowHolder";
+		this.menuListWindowHolder.classList.add("ccGalleryMenuWindowHolder");
+		this.menuListWindowHolder.onclick = () => { this.hideMenuList(); };
+
+		this.menuListWindow = document.createElement("div");
+		this.menuListWindow.id = "ccGalleryMenuWindow";
+		this.menuListWindow.classList.add("ccGalleryMenuWindow");
+
+		let menuListWindowTitle = document.createElement("h1");
+		menuListWindowTitle.classList.add("ccGalleryMenuTitle");
+		menuListWindowTitle.innerHTML = this.config.menuGalleriesTitle;
+		this.menuListWindow.appendChild(menuListWindowTitle);
+
+		for (let galleryName of this.galleryNames) {
+			let menuListAlbumLink = document.createElement("a");
+			menuListAlbumLink.classList.add("menuListAlbumLink");
+			menuListAlbumLink.innerHTML = galleryName;
+			if ("." == galleryName) {
+				menuListAlbumLink.innerHTML = "Main";
+			}
+			menuListAlbumLink.onclick = () => { this.showGallery(galleryName); };
+			this.menuListWindow.appendChild(menuListAlbumLink);
+		}
+
+		let parentNode = document.getElementById(this.config.galleryParentId).parentNode;
+		parentNode.appendChild(menuContainer);
+		parentNode.appendChild(this.menuListWindowHolder);
+		parentNode.appendChild(this.menuListWindow);		
+	}
+
+	showMenuList() {
+		CCUtil.centerElement(this.menuListWindow);
+		this.menuListWindowHolder.style.zIndex = 200;
+		this.menuListWindowHolder.style.opacity = "0.0";
+		this.menuListWindow.style.opacity = "0.0";
+		this.menuListWindow.style.zIndex = 201;
+		$(this.menuListWindowHolder).animate( { "opacity":'0.25' }, "slow");
+		$(this.menuListWindow).animate( { "opacity":'1.0' }, "slow");
+	}
+
+	hideMenuList() {
+		this.menuListWindowHolder.style.opacity = "0.0";
+		this.menuListWindowHolder.style.zIndex = 0;		
+		this.menuListWindow.style.opacity = "0.0";
+		this.menuListWindow.style.zIndex = 0;
+	}
+
+	showGallery(galleryName) {
+		this.hideMenuList();
+		this.galleryManager.showGallery(galleryName);
+	}
+}
+
+export class CCGalleryManager {
+	config = null;
+	
+	galleryJsonFileURL = null;
+	galleries = [];
+	currentGallery = null;
+	menuManager = null;
+	
+	constructor(ccGalleryConfig) {
+		if (ccGalleryConfig == null) {
+			ccGalleryConfig = new CCGalleryConfig();
+		}		
+		this.config = ccGalleryConfig;
+		this.galleryJsonFileURL = this.config.galleryUrlPrefix + "/" + this.config.galleryIndexJSONFile;	
+	}
+
+	initializePageHandlers() {
+		window.ccGalleryManager = this;
+		window.onload = () => { this.firstLoadHandler(); };
+		window.onresize = () => { this.currentGallery.resetImages(); }
+	}
+
+	showGallery(galleryName) {
+		for (let gallery of this.galleries) {
+			if (gallery.galleryName == galleryName) {
+				console.log("Loading gallery: " + this.currentGallery.galleryName);
+				if (this.currentGallery != null) {
+					this.currentGallery.unload();
+				}
+				this.currentGallery = gallery;
+				this.currentGallery.load();
+			}
+		}
+	}
+
+	async firstLoadHandler() {
+		let galleriesIndex = await CCUtil.loadJSON(this.galleryJsonFileURL);
+		for (let galleryName of galleriesIndex.galleryNames) {
+			console.log("Loading gallery '" + galleryName + "'");
+			let ccGallery = new CCGallery(this.config, galleryName);
+			if (this.currentGallery == null) {
+				this.currentGallery = ccGallery;
+				ccGallery.load();
+			}
+			this.galleries.push(ccGallery);
+		}
+		if (this.config.menuSupported == true) {
+			this.menuManager = new CCMenuManager(this, this.config, galleriesIndex.galleryNames);
+			this.menuManager.initializeMenu();
+		}
+	}
+}
+
 export class CCGalleryConfig {
 	galleryParentId = "gallery";
 	downloadsEnabled = true;
@@ -378,67 +513,13 @@ export class CCGalleryConfig {
 	galleryUrlPrefix = "gallery"
 	galleryJSONFile = "gallery.json"
 	galleryIndexJSONFile = "gallery-index.json"
-	
+	menuSupported = true;
+	menuButtonContent = "&#9776;";
+	menuGalleriesTitle = "GALLERIES";
+	menuContainerId = "ccGalleryMenu";	
 
 	constructor() {
 		this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);		
 		this.onImageLoadOpacity = this.isMobile ? 1.0 : 0.5;
-	}
-}
-
-export class CCGalleryManager {
-	config = null;
-	
-	galleryJsonFileURL = null;
-	galleries = [];
-	currentGallery = null;
-	currentGalleryIndex = 0;
-	
-	constructor(ccGalleryConfig) {
-		if (ccGalleryConfig == null) {
-			ccGalleryConfig = new CCGalleryConfig();
-		}		
-		this.config = ccGalleryConfig;
-
-		this.galleryJsonFileURL = this.config.galleryUrlPrefix + "/" + this.config.galleryIndexJSONFile;	
-	}
-
-	initializePageHandlers() {
-		window.ccGalleryManager = this;
-		window.onload = () => { this.firstLoadHandler(); };
-		window.onresize = () => { this.currentGallery.resetImages(); }
-	}
-
-	async firstLoadHandler() {
-		let galleriesIndex = await CCUtil.loadJSON(this.galleryJsonFileURL);
-		// console.log("galleriesIndex", galleriesIndex);
-		for (let galleryName of galleriesIndex.galleryNames) {
-			console.log("Loading gallery '" + galleryName + "'");
-			let ccGallery = new CCGallery(this.config, galleryName);
-			if (this.currentGallery == null) {
-				this.currentGallery = ccGallery;
-				ccGallery.load();
-			}
-			this.galleries.push(ccGallery);
-		}
-		this.initializeMenu();
-	}
-
-	initializeMenu() {
-		let menuButton = document.getElementById("menuButton");
-		menuButton.onclick = () => {
-			if (this.currentGallery != null) {
-				this.currentGallery.unload();
-			}
-			if (this.galleries.length > 0) {
-				this.currentGalleryIndex += 1;
-				if (this.currentGalleryIndex == this.galleries.length) {
-					this.currentGalleryIndex = 0;
-				}
-				this.currentGallery = this.galleries[this.currentGalleryIndex];
-				this.currentGallery.load();
-				console.log("Loading gallery: " + this.currentGallery.galleryName);
-			}
-		};
 	}
 }

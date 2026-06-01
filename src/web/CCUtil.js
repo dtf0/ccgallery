@@ -28,6 +28,23 @@ export default class CCUtil {
 		}
 	}
 
+	static removeElement(elementId) {
+		if (elementId == null) {
+			return;
+		}
+		let element = document.getElementById(elementId);
+		if (element == null) {
+			return;
+		}
+
+		if (element.parentNode == null) {
+			return;
+		}
+
+		let parentNode = element.parentNode;
+		parentNode.removeChild(element);
+	}
+
 	// returns childElement
 	static createElementChild(elementId, childElementName, childElementId) {
 		if (elementId == null) {
