@@ -8,16 +8,16 @@ A:hover { color:grey; text-decoration:none; }
 #menu { z-index:1000; background-color:black; color:white; padding:10px 15px; border-radius:5px; 
 	font-size:2rem; position:absolute; bottom:5%; right:5%; }
 
-#bg { position:fixed; background-color:white; z-index:1; overflow:hidden; 
+#ccGalleryContainer { position:fixed; background-color:white; z-index:1; overflow:hidden; 
 	width:calc(100vw); height:calc(100vh); }
-#bg IMG { margin:2px; position:absolute; }
+#ccGalleryContainer IMG { margin:2px; position:absolute; }
 
-#preloader { z-index:100; width:32px; height:32px; position:absolute; opacity:0.0; }
+#ccGalleryPreloader { z-index:100; width:32px; height:32px; position:absolute; opacity:0.0; }
 
-#photooverlay { z-index:110; opacity:0.0; position:absolute; margin:2px; }
-#photooverlay .footer { background:linear-gradient(to right,rgba(0,0,0,0), rgba(0,0,0,0.5));
+#ccGalleryPhotoOverlay { z-index:110; opacity:0.0; position:absolute; margin:2px; }
+#ccGalleryPhotoOverlay .footer { background:linear-gradient(to right,rgba(0,0,0,0), rgba(0,0,0,0.5));
 	width:calc(100% - 10px); text-align:right; padding:5px; }
 
 @media (max-width:641px) {
-	#bg { margin:0; }
+	#ccGalleryContainer { margin:0; }
 }

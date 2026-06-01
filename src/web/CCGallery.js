@@ -1,22 +1,6 @@
-class CCUtil {
-	static async loadJSON(file) {
-	  try {
-	    console.log("Fetching json file: " + file);
-	    // let jsonData = require(file);
-	    const response = await fetch(file); // Adjust the path as needed
-	    if (!response.ok) {
-	      console.log("Error fetching json '" + file + "'", response);
-	    }
-	    const jsonData = await response.json(); // Parses the JSON data into a JS object
-	    //console.log({ json: jsonData });
-	    return jsonData;
-	  } catch (error) {
-	    console.error("Error fetching JSON file: "+ file, error);
-	  }
-	}
-}
+import CCUtil from "./CCUtil.js";
 
-class CCGalleryThumbnail {
+export class CCGalleryThumbnail {
 	ccGallery = null;
 	imgData = null;
 	x = null;
@@ -43,7 +27,7 @@ class CCGalleryThumbnail {
 		thumbnailImg.src = this.ccGallery.urlPrefix + "/" + this.imgData.thumbnail.file;
 
 		thumbnailImg.onload = this.handleOnLoad;
-		if (!this.ccGallery.isMobile) {
+		if (!this.ccGallery.config.isMobile) {
 			thumbnailImg.onmouseover = this.handleMouseOver;
 			thumbnailImg.onmouseout = this.handleMouseOut;
 		}
@@ -62,7 +46,7 @@ class CCGalleryThumbnail {
 	handleOnLoad() {
 		let ccGallery = this.ccThumbnail.ccGallery;
 		let randomDelay = 100 * (Math.floor(Math.random() * 10)+1);
-		$(this).animate({ opacity:ccGallery.onImageLoadOpacity }, randomDelay);
+		$(this).animate({ opacity:ccGallery.config.onImageLoadOpacity }, randomDelay);
 	}
 
 	handleOnClick() {		
@@ -94,7 +78,7 @@ class CCGalleryThumbnail {
 	}	
 }
 
-class CCGalleryBigImage {
+export class CCGalleryBigImage {
 	ccGallery = null;
 	ccThumbnail = null;
 	bigImageConfig = null;
@@ -243,38 +227,39 @@ class CCGalleryBigImage {
 	}
 }
 
-class CCGallery {
-	containerId = null;
-	preloaderId = null;
-	photoOverlayId = null;
+export class CCGallery {
+	config = null;
 	galleryName = null;
-
-	isMobile = null;
-	onImageLoadOpacity = 1.0;
-	urlPrefix = null;	
 	
+	urlPrefix = null;
+	galleryJsonFileURL = null;	
 	lastBigImage = null;
 	thumbnails = [];
+	galleryParentContainer = null;
+	galleryContainer = null;
+	preloader = null;
+	photoOverlay = null;
 
-	constructor(containerId, preloaderId, photoOverlayId, galleryName) {
-		this.containerId = containerId;
-		this.preloaderId = preloaderId;
-		this.photoOverlayId = photoOverlayId;
+	constructor(galleryConfig, galleryName) {
+		this.config = galleryConfig;
 		this.galleryName = galleryName;
-
-		this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);		
-		this.onImageLoadOpacity = this.isMobile ? 1.0 : 0.5;
-		this.urlPrefix = "gallery/" + galleryName;
-
-		console.log("isMobile: " + this.isMobile);
-
-		this.galleryContainer = document.getElementById(this.containerId);
+		this.urlPrefix = this.config.galleryUrlPrefix + "/" + galleryName;
+		this.galleryJsonFileURL = this.urlPrefix + "/" + this.config.galleryJSONFile;		
 	}
 
 	async load() {
-		let data = await CCUtil.loadJSON(this.urlPrefix + "/galleries.json");
+		let data = await CCUtil.loadJSON(this.galleryJsonFileURL);
 		this.name = data.name;
-		this.images = data.images;		
+		this.images = data.images;	
+
+		CCUtil.removeElementChildren(this.config.galleryParentId);
+		this.galleryContainer = CCUtil.createElementChild(this.config.galleryParentId, "div", this.config.containerId);
+		this.preloader = CCUtil.createElementChild(this.config.galleryParentId, "div", this.config.preloaderId);
+		if (this.config.photoOverlayContent != null) {
+			this.photoOverlay = CCUtil.createElementChild(this.config.galleryParentId, "div", this.config.photoOverlayId);
+			this.photoOverlay.innerHTML = this.config.photoOverlayContent;
+		}	
+
 		this.resetImages();
 	}
 
@@ -304,44 +289,44 @@ class CCGallery {
 	}		
 
 	showLoading() {
-		$("#" + this.preloaderId).animate( { "opacity":'1.0' }, "slow");
+		$(this.preloader).animate( { "opacity":'1.0' }, "slow");
 	}
 
 	hideLoading() {
-		$("#" + this.preloaderId).stop();
-		document.getElementById(this.preloaderId).style.opacity = "0.0";
+		$(this.preloader).stop();
+		this.preloader.style.opacity = "0.0";
 	}	
 
 	showPhotoOverlay(bigImageConfig) {
-		let overlay = document.getElementById(this.photoOverlayId);
-		overlay.style.width = bigImageConfig.w + "px";
-		overlay.style.left = bigImageConfig.x + "px";
-		console.log("overlay", { "x": overlay });
-		let topStyle = (bigImageConfig.y + bigImageConfig.h) - overlay.offsetHeight;
-		overlay.style.top = topStyle + "px";
-		overlay.style.zIndex = 200;
-		overlay.ccGallery = this;
-		overlay.onclick = () => { this.hideBigImage; };
+		if (this.photoOverlay == null) {
+			return;
+		}
+		let topStyle = (bigImageConfig.y + bigImageConfig.h) - this.photoOverlay.offsetHeight;
+		
+		this.photoOverlay.style.width = bigImageConfig.w + "px";
+		this.photoOverlay.style.left = bigImageConfig.x + "px";		
+		this.photoOverlay.style.top = topStyle + "px";
+		this.photoOverlay.style.zIndex = 200;
+		this.photoOverlay.ccGallery = this;
+		this.photoOverlay.onclick = () => { this.hideBigImage; };
 
-		$("#" + this.photoOverlayId).animate( { "opacity":'1.0' }, "slow");
+		$(this.photoOverlay).animate( { "opacity":'1.0' }, "slow");
 	}
 
 	hidePhotoOverlay(bigImageConfig) {
-		let overlay = document.getElementById(this.photoOverlayId);
-		overlay.style.opacity = "0.0";
-		overlay.style.zIndex = 0;		
+		if (this.photoOverlay == null) {
+			return;
+		}
+		this.photoOverlay.style.opacity = "0.0";
+		this.photoOverlay.style.zIndex = 0;		
 	}
 
 	resetImages() {
-		// remove all children of container		
-		while (this.galleryContainer.firstChild) {
-			this.galleryContainer.removeChild(this.galleryContainer.firstChild);
-		}
+		CCUtil.removeElementChildren(this.config.containerId);		
 
 		// re-center preloader in case browser resized
-		let preloader = document.getElementById(this.preloaderId);
-		preloader.style.left = ((window.innerWidth - 32) / 2) + "px";
-		preloader.style.top = ((window.innerHeight - 32) / 2) + "px";
+		this.preloader.style.left = ((window.innerWidth - 32) / 2) + "px";
+		this.preloader.style.top = ((window.innerHeight - 32) / 2) + "px";
 		
 		let containerHeight = this.galleryContainer.clientHeight;
 		let containerWidth = this.galleryContainer.clientWidth;
@@ -370,32 +355,54 @@ class CCGallery {
 	}
 }
 
-class CCGalleryManager {
-	containerId = null;
-	preloaderId = null;
-	photoOverlayId = null;
+export class CCGalleryConfig {
+	galleryParentId = "gallery";
+	downloadsEnabled = true;
+	containerId = "ccGalleryContainer";
+	preloaderId = "ccGalleryPreloader";
+	photoOverlayId = "ccGalleryPhotoOverlay";
+	isMobile = null;
+	onImageLoadOpacity = 1.0;
+	galleryUrlPrefix = "gallery"
+	galleryJSONFile = "gallery.json"
+	galleryIndexJSONFile = "gallery-index.json"
+	phootOverlayContent = null;
+
+	constructor() {
+		this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);		
+		this.onImageLoadOpacity = this.isMobile ? 1.0 : 0.5;
+	}
+}
+
+export class CCGalleryManager {
+	config = null;
+	
+	galleryJsonFileURL = null;
 	galleries = [];
 	currentGallery = null;
 	currentGalleryIndex = 0;
+	
+	constructor(ccGalleryConfig) {
+		if (ccGalleryConfig == null) {
+			ccGalleryConfig = new CCGalleryConfig();
+		}		
+		this.config = ccGalleryConfig;
 
-	constructor(containerId, preloaderId, photoOverlayId) {
-		this.containerId = containerId;
-		this.preloaderId = preloaderId;
-		this.photoOverlayId = photoOverlayId;
+		this.galleryJsonFileURL = this.config.galleryUrlPrefix + "/" + this.config.galleryIndexJSONFile;	
 	}
 
 	initializePageHandlers() {
 		window.ccGalleryManager = this;
 		window.onload = () => { this.firstLoadHandler(); };
-		window.onresize = this.resetImages;
+		window.onresize = () => { this.currentGallery.resetImages(); }
 	}
 
 	async firstLoadHandler() {
-		let galleriesIndex = await CCUtil.loadJSON("gallery/galleries-index.json");
-		console.log("galleriesIndex", galleriesIndex);
+		let galleriesIndex = await CCUtil.loadJSON(this.galleryJsonFileURL);
+		// console.log("galleriesIndex", galleriesIndex);
 		for (let galleryName of galleriesIndex.galleryNames) {
 			console.log("Loading gallery '" + galleryName + "'");
-			let ccGallery = new CCGallery(this.containerId, this.preloaderId, this.photoOverlayId, galleryName);
+			let ccGallery = new CCGallery(this.config, galleryName);
 			if (this.currentGallery == null) {
 				this.currentGallery = ccGallery;
 				ccGallery.load();
@@ -408,7 +415,6 @@ class CCGalleryManager {
 	initializeMenu() {
 		let menuButton = document.getElementById("menuButton");
 		menuButton.onclick = () => {
-			console.log("menu clicked");
 			if (this.currentGallery != null) {
 				this.currentGallery.unload();
 			}
@@ -424,6 +430,3 @@ class CCGalleryManager {
 		};
 	}
 }
-
-var galleryManager = new CCGalleryManager("bg", "preloader", "photooverlay");
-galleryManager.initializePageHandlers();

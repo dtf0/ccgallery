@@ -4,16 +4,20 @@
 	<title>some photos by [your name here]</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<script src="jquery-1.11.3.min.js"></script>
-	<script src="imagegallery.js"></script>
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
 	<link rel="stylesheet" href="stylesheet.css">
 </head>
 <body id="body">
 	<div id="menu"><a id="menuButton" href="#">&#9776;</a></div>
-	<div id="bg"></div>
-	<img id="preloader" src="img/loading.gif" />
-	<div id="photooverlay">
-		<div class="footer"><a href="#">order a print</a></div>
-	</div>	
+	<div id="gallery"></div>
 </body>
+
+<script type="module">
+	import { CCGalleryManager, CCGalleryConfig } from './CCGallery.js';
+	var galleryConfig = new CCGalleryConfig();
+	galleryConfig.photoOverlayContent = "<div class='footer'><a href='#''>order a print</a></div>";
+	var galleryManager = new CCGalleryManager(galleryConfig);
+	galleryManager.initializePageHandlers();
+</script>
+
 </html>

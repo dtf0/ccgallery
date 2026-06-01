@@ -8,14 +8,12 @@ const sharp = require('sharp');
 
 async function resizeImage(originalFilePath, thumbnailFilePath) { 
   //resize image to auto-width (first 'null' arg) given height of 100 
-  console.log("b:" + originalFilePath)
   await sharp(originalFilePath)
     .resize(null, 100, (err) => {
       console.log("resize error", err)
     })
     .jpeg({ mozjpeg:true })
     .toFile(thumbnailFilePath);
-  console.log("c:" + originalFilePath)
 };
 
 async function getImageDims(file) {
@@ -120,16 +118,14 @@ async function processGalleryImages(galleryName, inputDirectory, outputDirectory
     fs.copyFileSync(originalFilePath, copiedFilePath);
 
     // create resized thumbnail in gallery directory
-    console.log("a:" + copiedFilePath)
     await resizeImage(copiedFilePath, thumbnailFilePath);
-    console.log("d:" + copiedFilePath)
 
     // save image metadata
     let imageMetaData = await getImageMetaData(copiedFilePath, thumbnailFilePath);
     imageMetaDatas.push(imageMetaData);
   }
 
-  let jsonFile = outputDirectory + "/" + "galleries.json";
+  let jsonFile = outputDirectory + "/" + "gallery.json";
 
   let galleryMetaData = { "name":galleryName, "images":imageMetaDatas };
 
@@ -180,7 +176,7 @@ async function processGalleries(inputDirectory, outputDirectory) {
     galleryNames.push(gallery.name);
   }
 
-  let jsonFile = outputDirectory + "/" + "galleries-index.json";
+  let jsonFile = outputDirectory + "/" + "gallery-index.json";
   let galleryMetaData = { "galleryNames":galleryNames };
   await writeJSON(jsonFile, galleryMetaData);
   console.log("Wrote galleries index JSON file:"  + jsonFile);
