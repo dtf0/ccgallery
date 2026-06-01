@@ -149,7 +149,7 @@ export class CCGalleryBigImage {
 		bigImage.id = "bigImage";
 		bigImage.ccBigImage = this;
 
-		bigImage.src = this.ccGallery.urlPrefix + "/" + this.ccThumbnail.imgData.original.file;
+		bigImage.src = this.ccGallery.urlPrefix + "/" + this.ccThumbnail.imgData.big.file;
 
 		bigImage.onload = this.handleBigImageLoad;
 		bigImage.onclick = () => { this.ccGallery.hideBigImage(); };
@@ -186,8 +186,8 @@ export class CCGalleryBigImage {
 		
 		var maxH = galleryContainer.clientHeight - 100;
 		var maxW = galleryContainer.clientWidth - 100;
-		var ow = imgData.original.width;
-		var oh = imgData.original.height;
+		var ow = imgData.big.width;
+		var oh = imgData.big.height;
 		var newW = ow;
 		var newH = oh;
 
@@ -401,10 +401,12 @@ export class CCMenuManager {
 		this.menuListWindow.id = "ccGalleryMenuWindow";
 		this.menuListWindow.classList.add("ccGalleryMenuWindow");
 
-		let menuListWindowTitle = document.createElement("h1");
-		menuListWindowTitle.classList.add("ccGalleryMenuTitle");
-		menuListWindowTitle.innerHTML = this.config.menuGalleriesTitle;
-		this.menuListWindow.appendChild(menuListWindowTitle);
+		if (this.config.menuGalleriesTitle != null) {
+			let menuListWindowTitle = document.createElement("h1");
+			menuListWindowTitle.classList.add("ccGalleryMenuTitle");
+			menuListWindowTitle.innerHTML = this.config.menuGalleriesTitle;
+			this.menuListWindow.appendChild(menuListWindowTitle);
+		}
 
 		for (let galleryName of this.galleryNames) {
 			let menuListAlbumLink = document.createElement("a");
@@ -471,7 +473,7 @@ export class CCGalleryManager {
 	showGallery(galleryName) {
 		for (let gallery of this.galleries) {
 			if (gallery.galleryName == galleryName) {
-				console.log("Loading gallery: " + this.currentGallery.galleryName);
+				console.log("Showing gallery: " + this.currentGallery.galleryName);
 				if (this.currentGallery != null) {
 					this.currentGallery.unload();
 				}
