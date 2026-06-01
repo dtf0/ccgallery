@@ -220,9 +220,8 @@ export class CCGalleryBigImage {
 		var newX = Math.floor((galleryContainer.clientWidth - newW) / 2.0);
 		var newY = Math.floor((galleryContainer.clientHeight - newH) / 2.0);
 		// our container window is purposely off center by 50 pixels
-		// so move the image up 50 pixels to match the container window's
-		// -50 offset 
-		newY -= 50;
+		// so on mobile move the image up 50 pixels to match the container window's
+		newY -= this.ccGallery.config.centeredBigImageYOffset;
 
 		console.log("Original dims: " + ow + "x" + oh + ", Scaled: " + newW + "x" + newH);
 		console.log("New placement: " + newX + "x" + newY);
@@ -516,10 +515,12 @@ export class CCGalleryConfig {
 	menuSupported = true;
 	menuButtonContent = "&#9776;";
 	menuGalleriesTitle = "GALLERIES";
-	menuContainerId = "ccGalleryMenu";	
+	menuContainerId = "ccGalleryMenu";
+	centeredBigImageYOffset = 0;	
 
 	constructor() {
 		this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);		
 		this.onImageLoadOpacity = this.isMobile ? 1.0 : 0.5;
+		this.centeredBigImageYOffset = this.isMobile ? 50 : 0;
 	}
 }
