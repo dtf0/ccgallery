@@ -42,4 +42,15 @@ export default class CCUtil {
 		element.appendChild(childElement);
 		return childElement;
 	}
+
+	static centerElement(element) {
+		if (element == null) {
+			return;
+		}
+		console.log("height: " + element.clientHeight);
+		let top = ((window.innerHeight - element.clientHeight) / 2);
+		let left = ((window.innerWidth - element.clientWidth) / 2);
+		element.style.left = left + "px";
+		element.style.top = top + "px";
+	}
 }

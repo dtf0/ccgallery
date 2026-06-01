@@ -254,7 +254,10 @@ export class CCGallery {
 
 		CCUtil.removeElementChildren(this.config.galleryParentId);
 		this.galleryContainer = CCUtil.createElementChild(this.config.galleryParentId, "div", this.config.containerId);
-		this.preloader = CCUtil.createElementChild(this.config.galleryParentId, "div", this.config.preloaderId);
+		if (this.config.preloaderImageURL != null) {
+			this.preloader = CCUtil.createElementChild(this.config.galleryParentId, "img", this.config.preloaderId);
+			this.preloader.src = this.config.preloaderImageURL;
+		}
 		if (this.config.photoOverlayContent != null) {
 			this.photoOverlay = CCUtil.createElementChild(this.config.galleryParentId, "div", this.config.photoOverlayId);
 			this.photoOverlay.innerHTML = this.config.photoOverlayContent;
@@ -289,10 +292,16 @@ export class CCGallery {
 	}		
 
 	showLoading() {
+		if (this.preloader == null) {
+			return;
+		}
 		$(this.preloader).animate( { "opacity":'1.0' }, "slow");
 	}
 
 	hideLoading() {
+		if (this.preloader == null) {
+			return;
+		}
 		$(this.preloader).stop();
 		this.preloader.style.opacity = "0.0";
 	}	
@@ -324,9 +333,10 @@ export class CCGallery {
 	resetImages() {
 		CCUtil.removeElementChildren(this.config.containerId);		
 
-		// re-center preloader in case browser resized
-		this.preloader.style.left = ((window.innerWidth - 32) / 2) + "px";
-		this.preloader.style.top = ((window.innerHeight - 32) / 2) + "px";
+		if (this.preloader != null) {			
+			// re-center preloader in case browser resized
+			CCUtil.centerElement(this.preloader);
+		}
 		
 		let containerHeight = this.galleryContainer.clientHeight;
 		let containerWidth = this.galleryContainer.clientWidth;
@@ -360,13 +370,15 @@ export class CCGalleryConfig {
 	downloadsEnabled = true;
 	containerId = "ccGalleryContainer";
 	preloaderId = "ccGalleryPreloader";
+	preloaderImageURL = "img/loading.gif";
 	photoOverlayId = "ccGalleryPhotoOverlay";
+	phootOverlayContent = null;	
 	isMobile = null;
 	onImageLoadOpacity = 1.0;
 	galleryUrlPrefix = "gallery"
 	galleryJSONFile = "gallery.json"
 	galleryIndexJSONFile = "gallery-index.json"
-	phootOverlayContent = null;
+	
 
 	constructor() {
 		this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);		
