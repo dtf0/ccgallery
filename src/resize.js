@@ -6,10 +6,10 @@ const sharp = require('sharp');
 // node path reference: https://nodejs.org/api/path.html
 // sharp image library reference: https://sharp.pixelplumbing.com/
 
-async function resizeImage(originalFilePath, thumbnailFilePath) { 
-  //resize image to auto-width (first 'null' arg) given height of 100 
+async function resizeImage(originalFilePath, thumbnailFilePath, maxHeight) { 
+  //resize image to auto-width (first 'null' arg) given height of maxHeight 
   await sharp(originalFilePath)
-    .resize(null, 100, (err) => {
+    .resize(null, maxHeight, (err) => {
       console.log("resize error", err)
     })
     .jpeg({ mozjpeg:true })
@@ -66,15 +66,15 @@ function makeDirectory(path) {
   }
 }
 
-async function getImageMetaData(originalFilePath, thumbnailFilePath) {
-  let originalMetaData = await getImageDims(originalFilePath);
-  originalMetaData.file = path.parse(originalFilePath).base;
+async function getImageMetaData(bigFilePath, thumbnailFilePath) {
+  let bigMetaData = await getImageDims(bigFilePath);
+  bigMetaData.file = path.parse(bigFilePath).base;
 
   let thumbnailMetaData = await getImageDims(thumbnailFilePath);
   thumbnailMetaData.file = path.parse(thumbnailFilePath).base;
 
   let imageMetaData = {
-    "original": originalMetaData,
+    "big": bigMetaData,
     "thumbnail": thumbnailMetaData
   }
 
@@ -108,20 +108,26 @@ async function processGalleryImages(galleryName, inputDirectory, outputDirectory
 
     let originalFilePathInfo = path.parse(originalFilePath);
 
-    let thumbnailFile = originalFilePathInfo.name + "_tn" + originalFilePathInfo.ext;
-    let thumbnailFilePath = outputDirectory + "/" + thumbnailFile;
-
     console.log("Processing '" + galleryName + "/" + originalFile + "'");
 
-    // copy input file to gallery directory
-    let copiedFilePath = outputDirectory + "/" + originalFile;
-    fs.copyFileSync(originalFilePath, copiedFilePath);
+    let bigFile = originalFilePathInfo.name + "_big" + originalFilePathInfo.ext;
+    let bigFilePath = outputDirectory + "/" + bigFile;
+
+    // create big version in gallery directory, resizing if needed
+    let originalMetaData = await getImageDims(originalFilePath);
+    if (originalMetaData.height > 2000) {            
+      await resizeImage(originalFilePath, bigFilePath, 2000);  
+    } else {
+      fs.copyFileSync(originalFilePath, bigFilePath);
+    } 
 
     // create resized thumbnail in gallery directory
-    await resizeImage(copiedFilePath, thumbnailFilePath);
+    let thumbnailFile = originalFilePathInfo.name + "_tn" + originalFilePathInfo.ext;
+    let thumbnailFilePath = outputDirectory + "/" + thumbnailFile;
+    await resizeImage(originalFilePath, thumbnailFilePath, 100);
 
     // save image metadata
-    let imageMetaData = await getImageMetaData(copiedFilePath, thumbnailFilePath);
+    let imageMetaData = await getImageMetaData(bigFilePath, thumbnailFilePath);
     imageMetaDatas.push(imageMetaData);
   }
 

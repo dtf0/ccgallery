@@ -64,7 +64,6 @@ export default class CCUtil {
 		if (element == null) {
 			return;
 		}
-		console.log("height: " + element.clientHeight);
 		let top = ((window.innerHeight - element.clientHeight) / 2);
 		let left = ((window.innerWidth - element.clientWidth) / 2);
 		element.style.left = left + "px";
