@@ -21,6 +21,13 @@
 	galleryConfig.screenSaverConfig.enabled = true;
 	galleryConfig.screenSaverConfig.runIntervalMillis = 2000;
 	galleryConfig.allGalleryEnabled = false;
+	if (galleryConfig.advancedConfig.isMobile == false) {
+		galleryConfig.advancedConfig.gallerySpecificRowHeightsPixels["Daisy"] = 100;
+		galleryConfig.advancedConfig.gallerySpecificRowHeightsPixels["Chickens"] = 150;
+		galleryConfig.advancedConfig.gallerySpecificRowHeightsPixels["Home"] = 150;
+		galleryConfig.advancedConfig.gallerySpecificRowHeightsPixels["Nature"] = 150;
+		galleryConfig.advancedConfig.gallerySpecificRowHeightsPixels["Etc"] = 100;
+	}
 	// galleryConfig.photoOverlayContent = "<div class='footer'><a href='#''>order a print</a></div>";
 
 	var galleryManager = new CCGalleryManager(galleryConfig);

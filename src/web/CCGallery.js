@@ -10,12 +10,13 @@ export class CCGalleryThumbnail {
 	thumbnailImg = null;
 	enlarged = false;
 
-	constructor(ccGallery, imgData, x, y) {
+	constructor(ccGallery, imgData, x, y, rowHeightPixels) {
 		this.ccGallery = ccGallery;
 		this.imgData = imgData;
 		this.x = x;
 		this.y = y;
-		this.height = ccGallery.config.rowHeightPixels;
+
+		this.height = rowHeightPixels;
 
 		// scale width the same scale as height pixels
 		let oh = imgData.thumbnail.height;
@@ -423,6 +424,10 @@ export class CCGallery {
 		let imagesToUse = imagesCopy.slice();
 
 		let rowHeightPixels = this.config.rowHeightPixels;
+		let gallerySpecificRowHeightPixels = this.config.advancedConfig.gallerySpecificRowHeightsPixels[this.galleryName];
+		if (gallerySpecificRowHeightPixels != null) {
+			rowHeightPixels = gallerySpecificRowHeightPixels;
+		}
 		let thumbnailBorderPixels = this.config.thumbnailBorderPixels;
 
 		while (currentThumbnailY < (containerHeight + 50)) {
@@ -434,7 +439,7 @@ export class CCGallery {
 					imagesToUse = imagesCopy.slice();
 				}
 
-				let ccThumbnail = new CCGalleryThumbnail(this, imgData, currentThumbnailX, currentThumbnailY);
+				let ccThumbnail = new CCGalleryThumbnail(this, imgData, currentThumbnailX, currentThumbnailY, rowHeightPixels);
 				this.galleryContainer.appendChild(ccThumbnail.createThumbnailImageElement());				
 				this.thumbnails.push(ccThumbnail);
 
@@ -794,7 +799,7 @@ export class CCGalleryManager {
 }
 
 export class CCAdvancedConfig {
-	isMobile = null;
+	isMobile = false;
 	galleryContainerId = "ccGalleryContainer";
 	preloaderId = "ccGalleryPreloader";
 	preloaderImageURL = "img/loading.gif";
@@ -803,6 +808,7 @@ export class CCAdvancedConfig {
 	galleryIndexJSONFile = "gallery-index.json"
 	centeredBigImageYOffset = 0;
 	galleryUrlPrefix = "gallery"
+	gallerySpecificRowHeightsPixels = {};
 	constructor() {
 		this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);		
 		this.centeredBigImageYOffset = this.isMobile ? 50 : 0;
