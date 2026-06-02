@@ -5,6 +5,8 @@ export class CCGalleryThumbnail {
 	imgData = null;
 	x = null;
 	y = null;
+	width = null;
+	height = null;
 	thumbnailImg = null;
 	enlarged = false;
 
@@ -12,7 +14,15 @@ export class CCGalleryThumbnail {
 		this.ccGallery = ccGallery;
 		this.imgData = imgData;
 		this.x = x;
-		this.y = y;		
+		this.y = y;
+		this.height = ccGallery.config.rowHeightPixels;
+
+		// scale width the same scale as height pixels
+		let oh = imgData.thumbnail.height;
+		let ow = imgData.thumbnail.width;
+
+		let ratioFloat = parseFloat(this.height) / parseFloat(oh);
+		this.width = Math.floor(parseFloat(ow) * ratioFloat);		
 	}
 
 	destroy() {
@@ -35,14 +45,8 @@ export class CCGalleryThumbnail {
 		}
 		thumbnailImg.onclick = this.handleOnClick;
 
-		thumbnailImg.style.width = this.imgData.thumbnail.width + "px";		
-		thumbnailImg.style.height = this.imgData.thumbnail.height + "px";
-		thumbnailImg.dims = { 
-			"width":this.imgData.thumbnail.width, 
-			"height":this.imgData.thumbnail.height, 
-			"x":this.x,
-			"y":this.y, 
-		};
+		thumbnailImg.style.width = this.width + "px";		
+		thumbnailImg.style.height = this.height + "px";
 		thumbnailImg.style.left = this.x + "px";
 		thumbnailImg.style.top = this.y + "px";
 		thumbnailImg.style.opacity = "0.0";
@@ -72,23 +76,18 @@ export class CCGalleryThumbnail {
 		}
 		this.thumbnailImg.style.zIndex = 20 + zIndexOffset;	
 
-		let width = this.thumbnailImg.dims.width;
-		let widthOffSet = Math.floor((width / 100) * percentageIncrease);
-		width += widthOffSet; 
+		let widthOffSet = Math.floor((this.width / 100) * percentageIncrease);
+		let targetWidth = this.width + widthOffSet; 
 
-		let height = this.thumbnailImg.dims.height;
-		let heightOffSet = Math.floor((height / 100) * percentageIncrease);
-		height += heightOffSet; 
+		let heightOffSet = Math.floor((this.height / 100) * percentageIncrease);
+		let targetHeight = this.height + heightOffSet; 
 
-		let left = this.thumbnailImg.dims.x;
-		left -= Math.floor(widthOffSet / 2);
-
-		let top = this.thumbnailImg.dims.y;
-		top -= Math.floor(heightOffSet / 2);				
+		let left = this.x - Math.floor(widthOffSet / 2);
+		let top = this.y - Math.floor(heightOffSet / 2);
 
 		let sizeAnimationConfig = {
-			"width": width + "px",
-			"height": height + "px",
+			"width": targetWidth + "px",
+			"height": targetHeight + "px",
 			"left": left + "px",
 			"top": top + "px",
 			"easing": "linear"
@@ -116,15 +115,11 @@ export class CCGalleryThumbnail {
 		if (this.thumbnailImg == null || this.enlarged == true) {
 			return;
 		}
-		let width = (this.thumbnailImg.dims.width) + "px";
-		let height = (this.thumbnailImg.dims.height) + "px";	
-		let top = (this.thumbnailImg.dims.y) + "px";
-		let left = (this.thumbnailImg.dims.x) + "px";
 		let sizeAnimationConfig = {
-			"width": width,
-			"height": height,
-			"left": left,
-			"top": top,
+			"width": this.width + "px",
+			"height": this.height + "px",
+			"left": this.x + "px",
+			"top": this.y + "px",
 			"easing": "linear"
 		}
 
@@ -420,6 +415,9 @@ export class CCGallery {
 		let currentThumbnailY = -50;
 		let imagesToUse = this.images.slice();
 
+		let rowHeightPixels = this.config.rowHeightPixels;
+		let thumbnailBorderPixels = this.config.thumbnailBorderPixels;
+
 		while (currentThumbnailY < (containerHeight + 50)) {
 			while (currentThumbnailX < containerWidth) {
 				let imgIndex = Math.floor(Math.random() * (imagesToUse.length));
@@ -433,9 +431,9 @@ export class CCGallery {
 				this.galleryContainer.appendChild(ccThumbnail.createThumbnailImageElement());				
 				this.thumbnails.push(ccThumbnail);
 
-				currentThumbnailX += imgData.thumbnail.width + 4;
+				currentThumbnailX += ccThumbnail.width + thumbnailBorderPixels;
 			}
-			currentThumbnailY += 104;
+			currentThumbnailY += rowHeightPixels + thumbnailBorderPixels;
 			currentThumbnailX = -50;
 		}
 	}
@@ -760,6 +758,8 @@ export class CCAdvancedConfig {
 
 export class CCGalleryConfig {
 	galleryParentId = "gallery";
+	rowHeightPixels = 100;
+	thumbnailBorderPixels = 4;
 	photoOverlayContent = null;			
 	screenSaverConfig = null;
 	menuConfig = null;
