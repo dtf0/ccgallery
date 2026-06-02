@@ -12,6 +12,7 @@ async function resizeImage(originalFilePath, thumbnailFilePath, maxHeight) {
     .resize(null, maxHeight, (err) => {
       console.log("resize error", err)
     })
+    .autoOrient()
     .jpeg({ mozjpeg:true })
     .toFile(thumbnailFilePath);
 };
@@ -19,7 +20,7 @@ async function resizeImage(originalFilePath, thumbnailFilePath, maxHeight) {
 async function getImageDims(file) {
   let imageDims = {};
   let image = sharp(file);
-  await image.metadata().then((metadata) => {
+  await image.autoOrient().metadata().then((metadata) => {
     imageDims.height = metadata.height;
     imageDims.width = metadata.width;
   });
@@ -46,7 +47,7 @@ function isSupportedImageFile(file) {
 
 function isDirectory(path) {
   try {
-    if (fs.existsSync(inputDirectory)) {
+    if (fs.existsSync(path)) {
       return fs.statSync(path).isDirectory();
     }    
   } catch (error) {
@@ -124,7 +125,7 @@ async function processGalleryImages(galleryName, inputDirectory, outputDirectory
     // create resized thumbnail in gallery directory
     let thumbnailFile = originalFilePathInfo.name + "_tn" + originalFilePathInfo.ext;
     let thumbnailFilePath = outputDirectory + "/" + thumbnailFile;
-    await resizeImage(originalFilePath, thumbnailFilePath, 100);
+    await resizeImage(originalFilePath, thumbnailFilePath, 200);
 
     // save image metadata
     let imageMetaData = await getImageMetaData(bigFilePath, thumbnailFilePath);
@@ -137,7 +138,9 @@ async function processGalleryImages(galleryName, inputDirectory, outputDirectory
 
   await writeJSON(jsonFile, galleryMetaData);
 
-  console.log("Wrote galleries JSON file:"  + jsonFile);
+  console.log("Wrote gallery JSON file:"  + jsonFile);
+
+  return galleryMetaData;
 }
 
 async function findGalleries(inputDirectory) {
@@ -170,6 +173,7 @@ async function processGalleries(inputDirectory, outputDirectory) {
   }
 
   let galleryNames = [];
+  let galleryMetaDatas = [];
   let galleries = await findGalleries(inputDirectory);
   console.log("galleries", galleries);
   for (gallery of galleries) {
@@ -178,13 +182,34 @@ async function processGalleries(inputDirectory, outputDirectory) {
     if (!isDirectory(galleryOutputDirectory)) {
       makeDirectory(galleryOutputDirectory);
     }
-    await processGalleryImages(gallery.name, gallery.path, galleryOutputDirectory);
+    let galleryMetaData = await processGalleryImages(gallery.name, gallery.path, galleryOutputDirectory);
+    galleryMetaDatas.push(galleryMetaData);
     galleryNames.push(gallery.name);
   }
 
+  // create 'all' gallery
+  let allGalleryMetaData = { "name":"All", "images":[] };
+  for (let galleryMetaData of galleryMetaDatas) {
+    for (let image of galleryMetaData.images) {
+      let allImage = structuredClone(image);
+      allImage.big.file = "../" + galleryMetaData.name + "/" + image.big.file;
+      allImage.thumbnail.file = "../" + galleryMetaData.name + "/" + image.thumbnail.file;
+      allGalleryMetaData.images.push(allImage);
+    }
+  }
+  let allGalleryOutputDirectory = outputDirectory + "/" + "All";
+  if (!isDirectory(allGalleryOutputDirectory)) {
+      makeDirectory(allGalleryOutputDirectory);
+    }
+  let allJsonFile = allGalleryOutputDirectory + "/" + "gallery.json";
+  await writeJSON(allJsonFile, allGalleryMetaData);
+  console.log("Wrote galleries JSON file:"  + allJsonFile);
+
+  galleryNames.unshift("All");
+
   let jsonFile = outputDirectory + "/" + "gallery-index.json";
-  let galleryMetaData = { "galleryNames":galleryNames };
-  await writeJSON(jsonFile, galleryMetaData);
+  let galleryIndexMetaData = { "galleryNames":galleryNames };
+  await writeJSON(jsonFile, galleryIndexMetaData);
   console.log("Wrote galleries index JSON file:"  + jsonFile);
 }
 

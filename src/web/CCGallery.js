@@ -36,7 +36,7 @@ export class CCGalleryThumbnail {
 		let thumbnailImg = document.createElement('img');		
 		thumbnailImg.ccThumbnail = this;
 
-		thumbnailImg.src = this.ccGallery.urlPrefix + "/" + this.imgData.thumbnail.file;
+		thumbnailImg.src = this.imgData.thumbnailImgSrc;
 
 		thumbnailImg.onload = this.handleOnLoad;
 		if (!this.ccGallery.config.advancedConfig.isMobile) {
@@ -90,25 +90,11 @@ export class CCGalleryThumbnail {
 			"height": targetHeight + "px",
 			"left": left + "px",
 			"top": top + "px",
-			"easing": "linear"
+			"easing": "swing"
 		}
 
-		if (animationTimeMillis < 500) {
-			sizeAnimationConfig.opacity = "1.0";
-			$(this.thumbnailImg).animate(sizeAnimationConfig, animationTimeMillis);
-		} else {
-			let opacityAnimationConfig = {
-				"opacity": "1.0",
-				"easing": "linear"
-			}
-			let opacityAnimationTime = 500;
-			
-			let opacityAnimationFinishedCallback = () => {
-				$(this.thumbnailImg).animate(sizeAnimationConfig, animationTimeMillis);
-			}
-
-			$(this.thumbnailImg).animate(opacityAnimationConfig, opacityAnimationTime, opacityAnimationFinishedCallback);
-		}		
+		this.thumbnailImg.style.opacity = 1.0;
+		$(this.thumbnailImg).animate(sizeAnimationConfig, animationTimeMillis);	
 	}
 
 	shrink(animationTimeMillis) {
@@ -175,7 +161,7 @@ export class CCGalleryBigImage {
 		scaledImage.id = "scaledImage";
 		scaledImage.ccBigImage = this;
 
-		scaledImage.src = this.ccGallery.urlPrefix + "/" + this.ccThumbnail.imgData.thumbnail.file;
+		scaledImage.src = this.ccThumbnail.imgData.thumbnailImgSrc;
 
 		scaledImage.onload = this.handleScaledImageLoad;
 		scaledImage.onclick = () => { this.ccBigImage.ccGallery.hideBigImage; };
@@ -218,9 +204,7 @@ export class CCGalleryBigImage {
 		bigImage.id = "bigImage";
 		bigImage.ccBigImage = this;
 
-		let bigImageFile = this.ccGallery.urlPrefix + "/" + this.ccThumbnail.imgData.big.file;
-
-		bigImage.src = bigImageFile;
+		bigImage.src = this.ccThumbnail.imgData.bigImageFileSrc;
 
 		bigImage.onload = this.handleBigImageLoad;
 		bigImage.onclick = () => { this.ccGallery.hideBigImage(); };
@@ -309,6 +293,8 @@ export class CCGallery {
 	galleryContainer = null;
 	preloader = null;
 	photoOverlay = null;
+	images = [];
+	imagesLoaded = false;
 
 	constructor(galleryConfig, galleryName) {
 		this.config = galleryConfig;
@@ -318,10 +304,6 @@ export class CCGallery {
 	}
 
 	async load() {
-		let data = await CCUtil.loadJSON(this.galleryJsonFileURL);
-		this.name = data.name;
-		this.images = data.images;	
-
 		CCUtil.removeElementChildren(this.config.galleryParentId);
 		this.galleryContainer = CCUtil.createElementChild(this.config.galleryParentId, "div", this.config.advancedConfig.galleryContainerId);
 		if (this.config.advancedConfig.preloaderImageURL != null) {
@@ -336,13 +318,36 @@ export class CCGallery {
 		this.resetImages();
 	}
 
+	async loadImages() {
+		if (this.imagesLoaded == true) {
+			return;
+		}
+		this.imagesLoaded = true;
+		let data = await CCUtil.loadJSON(this.galleryJsonFileURL);
+		let tmpImages = [];
+		if (data != null && data.images != null) {
+			for (let imgData of data.images) {
+				imgData.bigImageFileSrc = this.urlPrefix + "/" + imgData.big.file;
+				imgData.thumbnailImgSrc = this.urlPrefix + "/" + imgData.thumbnail.file;
+				tmpImages.push(imgData);
+			}
+		}
+		this.images = tmpImages;
+	}
+
+	unloadImages() {
+		this.images = [];
+		this.imagesLoaded = false;
+	}
+
 	unload() {
 		this.hideBigImage();
 		for (let thumbnail of this.thumbnails) {
 			thumbnail.destroy();
 		}
 		this.thumbnails = [];
-		CCUtil.removeElementChildren(this.config.galleryParentId);		
+		CCUtil.removeElementChildren(this.config.galleryParentId);
+		this.unloadImages();
 	}
 
 	showBigImage(ccThumbnail) {
@@ -350,7 +355,7 @@ export class CCGallery {
 		let bigImage = new CCGalleryBigImage(this, ccThumbnail);
 		bigImage.showScaledImage();
 		this.lastBigImage = bigImage;
-	}	
+	}
 
 	hideBigImage() {
 		this.hideLoading();
@@ -400,7 +405,7 @@ export class CCGallery {
 		this.photoOverlay.style.zIndex = 0;		
 	}
 
-	resetImages() {
+	async resetImages() {
 		CCUtil.removeElementChildren(this.config.advancedConfig.galleryContainerId);
 		this.thumbnails = [];		
 
@@ -413,7 +418,9 @@ export class CCGallery {
 		let containerWidth = this.galleryContainer.clientWidth;
 		let currentThumbnailX = -50; 
 		let currentThumbnailY = -50;
-		let imagesToUse = this.images.slice();
+		await this.loadImages();
+		let imagesCopy = this.images;
+		let imagesToUse = imagesCopy.slice();
 
 		let rowHeightPixels = this.config.rowHeightPixels;
 		let thumbnailBorderPixels = this.config.thumbnailBorderPixels;
@@ -424,7 +431,7 @@ export class CCGallery {
 				let imgData = imagesToUse[imgIndex];
 				imagesToUse.splice(imgIndex, 1);
 				if (imagesToUse.length == 0) {
-					imagesToUse = this.images.slice();
+					imagesToUse = imagesCopy.slice();
 				}
 
 				let ccThumbnail = new CCGalleryThumbnail(this, imgData, currentThumbnailX, currentThumbnailY);
@@ -547,6 +554,22 @@ export class CCScreenSaver {
 			return null;
 		}
 
+		let containerHeight = gallery.galleryContainer.clientHeight;
+		let containerWidth = gallery.galleryContainer.clientWidth;
+
+		// filter out partially off-screen thumbails
+		let tmpThumbnails = [];
+		for (let thumbnail of thumbnails) {
+			if (thumbnail.x < 0 
+				|| thumbnail.y < 0
+				|| (thumbnail.x + thumbnail.width) > containerWidth
+				|| (thumbnail.y + thumbnail.height) > containerHeight) {
+				continue;
+			}
+			tmpThumbnails.push(thumbnail);
+		}
+		thumbnails = tmpThumbnails;
+
 		return thumbnails;
 	}
 
@@ -650,7 +673,9 @@ export class CCMenuManager {
 		let parentNode = document.getElementById(this.config.galleryParentId).parentNode;
 		parentNode.appendChild(menuContainer);
 		parentNode.appendChild(this.menuListWindowHolder);
-		parentNode.appendChild(this.menuListWindow);		
+		parentNode.appendChild(this.menuListWindow);
+
+		CCUtil.centerElement(this.menuListWindow);		
 	}
 
 	showMenuList() {
@@ -714,17 +739,24 @@ export class CCGalleryManager {
 
 	async firstLoadHandler() {
 		let galleriesIndex = await CCUtil.loadJSON(this.galleryJsonFileURL);
+		let galleryNames = [];		
 		for (let galleryName of galleriesIndex.galleryNames) {
 			console.log("Loading gallery '" + galleryName + "'");
 			let ccGallery = new CCGallery(this.config, galleryName);
 			this.galleries.push(ccGallery);
-			if (this.currentGallery == null) {
-				this.showGallery(galleryName);
-			}
+			galleryNames.push(galleryName);
+		}		
+		if (this.config.allGalleryEnabled == true) {
+			let allGallery = await this.createAllGallery();
+			this.galleries.unshift(allGallery);
+			galleryNames.unshift("All");
+		}
+		if (this.galleries.length > 0) {
+			this.showGallery(this.galleries[0].galleryName);
 		}
 		if (this.config.menuConfig != null && this.config.menuConfig.enabled == true) {
 			console.log("Menu is enabled");
-			this.menuManager = new CCMenuManager(this, this.config, galleriesIndex.galleryNames);
+			this.menuManager = new CCMenuManager(this, this.config, galleryNames);
 			this.menuManager.initializeMenu();
 		} else {
 			console.log("Menu is disabled");
@@ -736,7 +768,28 @@ export class CCGalleryManager {
 		} else {
 			console.log("Screensaver is disabled");
 		}
+	}
 
+	async createAllGallery() {
+		const start = performance.now();
+		console.log("Creating 'all' gallery");
+		let allGallery = new CCGallery(this.config, "All");
+		let tmpImages = [];
+		for (let gallery of this.galleries) {
+			const loadStart = performance.now();				
+			await gallery.loadImages();			
+			const loadEnd = performance.now();
+			console.log("Loaded images for '" + gallery.galleryName + "' gallery in " + (loadEnd - loadStart) + "ms");
+			tmpImages = tmpImages.concat(gallery.images);
+		}
+		allGallery.imagesLoaded = true;
+		allGallery.images = tmpImages;
+		// don't let the 'all' gallery load the images list from the web
+		allGallery.loadImages = async () => {};
+		allGallery.unloadImages = async () => {};
+		const end = performance.now();
+		console.log("Finished creating 'all' gallery in " + (end - start) + "ms");
+		return allGallery;
 	}
 }
 
@@ -758,6 +811,7 @@ export class CCAdvancedConfig {
 
 export class CCGalleryConfig {
 	galleryParentId = "gallery";
+	allGalleryEnabled = true;
 	rowHeightPixels = 100;
 	thumbnailBorderPixels = 4;
 	photoOverlayContent = null;			
