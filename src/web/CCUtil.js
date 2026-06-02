@@ -28,11 +28,15 @@ export default class CCUtil {
 		}
 	}
 
-	static removeElement(elementId) {
+	static removeElementById(elementId) {
 		if (elementId == null) {
 			return;
 		}
 		let element = document.getElementById(elementId);
+		CCUtil.removeElement(element);
+	}
+
+	static removeElement(element) {
 		if (element == null) {
 			return;
 		}

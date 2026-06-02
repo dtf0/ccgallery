@@ -5,6 +5,8 @@ export class CCGalleryThumbnail {
 	imgData = null;
 	x = null;
 	y = null;
+	thumbnailImg = null;
+	enlarged = false;
 
 	constructor(ccGallery, imgData, x, y) {
 		this.ccGallery = ccGallery;
@@ -27,18 +29,26 @@ export class CCGalleryThumbnail {
 		thumbnailImg.src = this.ccGallery.urlPrefix + "/" + this.imgData.thumbnail.file;
 
 		thumbnailImg.onload = this.handleOnLoad;
-		if (!this.ccGallery.config.isMobile) {
-			thumbnailImg.onmouseover = this.handleMouseOver;
-			thumbnailImg.onmouseout = this.handleMouseOut;
+		if (!this.ccGallery.config.advancedConfig.isMobile) {
+			thumbnailImg.onmouseover = () => { this.enlarge(200, 200, 15);} ;
+			thumbnailImg.onmouseout = () => { this.shrink(400); };
 		}
 		thumbnailImg.onclick = this.handleOnClick;
 
-		thumbnailImg.style.width = this.imgData.thumbnail.width + "px";
+		thumbnailImg.style.width = this.imgData.thumbnail.width + "px";		
 		thumbnailImg.style.height = this.imgData.thumbnail.height + "px";
+		thumbnailImg.dims = { 
+			"width":this.imgData.thumbnail.width, 
+			"height":this.imgData.thumbnail.height, 
+			"x":this.x,
+			"y":this.y, 
+		};
 		thumbnailImg.style.left = this.x + "px";
 		thumbnailImg.style.top = this.y + "px";
 		thumbnailImg.style.opacity = "0.0";
 		thumbnailImg.style.zindex = 10;
+
+		this.thumbnailImg = thumbnailImg;
 
 		return thumbnailImg;
 	}
@@ -46,36 +56,100 @@ export class CCGalleryThumbnail {
 	handleOnLoad() {
 		let ccGallery = this.ccThumbnail.ccGallery;
 		let randomDelay = 100 * (Math.floor(Math.random() * 10)+1);
-		$(this).animate({ opacity:ccGallery.config.onImageLoadOpacity }, randomDelay);
+		$(this).animate({ opacity:0.5 }, randomDelay);
 	}
 
 	handleOnClick() {		
 		this.ccThumbnail.ccGallery.showBigImage(this.ccThumbnail);
 	}
 
-	handleMouseOver() {
-		let animationConfig = {
-			"opacity": "1.0",
-			"width": "+=16px",
-			"height": "+=16px",
-			"left": "-=8px",
-			"top": "-=8px",
-			"zIndex": 20,
+	enlarge(animationTimeMillis, zIndexOffset, percentageIncrease) {
+		if (this.thumbnailImg == null) {
+			return;
 		}
-		$(this).animate(animationConfig, 200);
+		if (zIndexOffset == null) {
+			zIndexOffset = 0;
+		}
+		this.thumbnailImg.style.zIndex = 20 + zIndexOffset;	
+
+		let width = this.thumbnailImg.dims.width;
+		let widthOffSet = Math.floor((width / 100) * percentageIncrease);
+		width += widthOffSet; 
+
+		let height = this.thumbnailImg.dims.height;
+		let heightOffSet = Math.floor((height / 100) * percentageIncrease);
+		height += heightOffSet; 
+
+		let left = this.thumbnailImg.dims.x;
+		left -= Math.floor(widthOffSet / 2);
+
+		let top = this.thumbnailImg.dims.y;
+		top -= Math.floor(heightOffSet / 2);				
+
+		let sizeAnimationConfig = {
+			"width": width + "px",
+			"height": height + "px",
+			"left": left + "px",
+			"top": top + "px",
+			"easing": "linear"
+		}
+
+		if (animationTimeMillis < 500) {
+			sizeAnimationConfig.opacity = "1.0";
+			$(this.thumbnailImg).animate(sizeAnimationConfig, animationTimeMillis);
+		} else {
+			let opacityAnimationConfig = {
+				"opacity": "1.0",
+				"easing": "linear"
+			}
+			let opacityAnimationTime = 500;
+			
+			let opacityAnimationFinishedCallback = () => {
+				$(this.thumbnailImg).animate(sizeAnimationConfig, animationTimeMillis);
+			}
+
+			$(this.thumbnailImg).animate(opacityAnimationConfig, opacityAnimationTime, opacityAnimationFinishedCallback);
+		}		
 	}
 
-	handleMouseOut() {
-		let animationConfig = {
-			"opacity": "0.5",
-			"width": "-=16px",
-			"height": "-=16px",
-			"left": "+=8px",
-			"top": "+=8px",
-			"zIndex": 10,
+	shrink(animationTimeMillis) {
+		if (this.thumbnailImg == null || this.enlarged == true) {
+			return;
 		}
-		$(this).animate(animationConfig, "slow");
-	}	
+		let width = (this.thumbnailImg.dims.width) + "px";
+		let height = (this.thumbnailImg.dims.height) + "px";	
+		let top = (this.thumbnailImg.dims.y) + "px";
+		let left = (this.thumbnailImg.dims.x) + "px";
+		let sizeAnimationConfig = {
+			"width": width,
+			"height": height,
+			"left": left,
+			"top": top,
+			"easing": "linear"
+		}
+
+		let finishedCallback = () => { 
+			this.enlarged = false; 
+			this.thumbnailImg.style.zIndex = 10;
+		}
+
+		if (animationTimeMillis < 500) {
+			sizeAnimationConfig.opacity = "0.5";
+			$(this.thumbnailImg).animate(sizeAnimationConfig, animationTimeMillis, finishedCallback);
+		} else {
+			let opacityAnimationConfig = {
+				"opacity": "0.5",
+				"easing": "linear"
+			}
+			let opacityAnimationTime = 1000;
+			
+			let sizeAnimationFinishedCallback = () => {
+				$(this.thumbnailImg).animate(opacityAnimationConfig, opacityAnimationTime, finishedCallback);
+			}
+
+			$(this.thumbnailImg).animate(sizeAnimationConfig, animationTimeMillis, sizeAnimationFinishedCallback);
+		}
+	}
 }
 
 export class CCGalleryBigImage {
@@ -111,7 +185,7 @@ export class CCGalleryBigImage {
 		scaledImage.onload = this.handleScaledImageLoad;
 		scaledImage.onclick = () => { this.ccBigImage.ccGallery.hideBigImage; };
 		
-		scaledImage.style.zIndex = 60;		
+		scaledImage.style.zIndex = 500;		
 		scaledImage.style.opacity = "0.0";
 		scaledImage.style.width = this.ccThumbnail.imgData.thumbnail.width + "px";
 		scaledImage.style.height = this.ccThumbnail.imgData.thumbnail.height + "px";
@@ -138,7 +212,7 @@ export class CCGalleryBigImage {
 		};
 		
 		let animationCallback = () => { ccBigImage.showBigImage(); };
-		
+
 		$(this).animate(animationConfig, 200, animationCallback);
 	}
 
@@ -149,12 +223,14 @@ export class CCGalleryBigImage {
 		bigImage.id = "bigImage";
 		bigImage.ccBigImage = this;
 
-		bigImage.src = this.ccGallery.urlPrefix + "/" + this.ccThumbnail.imgData.big.file;
+		let bigImageFile = this.ccGallery.urlPrefix + "/" + this.ccThumbnail.imgData.big.file;
+
+		bigImage.src = bigImageFile;
 
 		bigImage.onload = this.handleBigImageLoad;
 		bigImage.onclick = () => { this.ccGallery.hideBigImage(); };
 		
-		bigImage.style.zIndex = 70;
+		bigImage.style.zIndex = 510;
 		bigImage.style.opacity = "0.0";
 		bigImage.style.width = this.bigImageConfig.w + "px";
 		bigImage.style.height = this.bigImageConfig.h + "px";
@@ -173,12 +249,8 @@ export class CCGalleryBigImage {
 	}
 
 	hide() {
-		if (this.scaledImage) {			
-			this.ccGallery.galleryContainer.removeChild(this.scaledImage);	
-		}
-		if (this.bigImage) {			
-			this.ccGallery.galleryContainer.removeChild(this.bigImage);	
-		}
+		CCUtil.removeElement(this.scaledImage);
+		CCUtil.removeElement(this.bigImage);
 	}	
 
 	calculateBigImageConfig(ccGallery, imgData) {	
@@ -221,7 +293,7 @@ export class CCGalleryBigImage {
 		var newY = Math.floor((galleryContainer.clientHeight - newH) / 2.0);
 		// our container window is purposely off center by 50 pixels
 		// so on mobile move the image up 50 pixels to match the container window's
-		newY -= this.ccGallery.config.centeredBigImageYOffset;
+		newY -= this.ccGallery.config.advancedConfig.centeredBigImageYOffset;
 
 		console.log("Original dims: " + ow + "x" + oh + ", Scaled: " + newW + "x" + newH);
 		console.log("New placement: " + newX + "x" + newY);
@@ -246,8 +318,8 @@ export class CCGallery {
 	constructor(galleryConfig, galleryName) {
 		this.config = galleryConfig;
 		this.galleryName = galleryName;
-		this.urlPrefix = this.config.galleryUrlPrefix + "/" + galleryName;
-		this.galleryJsonFileURL = this.urlPrefix + "/" + this.config.galleryJSONFile;		
+		this.urlPrefix = this.config.advancedConfig.galleryUrlPrefix + "/" + galleryName;
+		this.galleryJsonFileURL = this.urlPrefix + "/" + this.config.advancedConfig.galleryJSONFile;		
 	}
 
 	async load() {
@@ -256,13 +328,13 @@ export class CCGallery {
 		this.images = data.images;	
 
 		CCUtil.removeElementChildren(this.config.galleryParentId);
-		this.galleryContainer = CCUtil.createElementChild(this.config.galleryParentId, "div", this.config.containerId);
-		if (this.config.preloaderImageURL != null) {
-			this.preloader = CCUtil.createElementChild(this.config.galleryParentId, "img", this.config.preloaderId);
-			this.preloader.src = this.config.preloaderImageURL;
+		this.galleryContainer = CCUtil.createElementChild(this.config.galleryParentId, "div", this.config.advancedConfig.galleryContainerId);
+		if (this.config.advancedConfig.preloaderImageURL != null) {
+			this.preloader = CCUtil.createElementChild(this.config.galleryParentId, "img", this.config.advancedConfig.preloaderId);
+			this.preloader.src = this.config.advancedConfig.preloaderImageURL;
 		}
 		if (this.config.photoOverlayContent != null) {
-			this.photoOverlay = CCUtil.createElementChild(this.config.galleryParentId, "div", this.config.photoOverlayId);
+			this.photoOverlay = CCUtil.createElementChild(this.config.galleryParentId, "div", this.config.advancedConfig.photoOverlayId);
 			this.photoOverlay.innerHTML = this.config.photoOverlayContent;
 		}	
 
@@ -319,7 +391,7 @@ export class CCGallery {
 		this.photoOverlay.style.width = bigImageConfig.w + "px";
 		this.photoOverlay.style.left = bigImageConfig.x + "px";		
 		this.photoOverlay.style.top = topStyle + "px";
-		this.photoOverlay.style.zIndex = 200;
+		this.photoOverlay.style.zIndex = 501;
 		this.photoOverlay.onclick = () => { this.hideBigImage; };
 
 		$(this.photoOverlay).animate( { "opacity":'1.0' }, "slow");
@@ -334,7 +406,8 @@ export class CCGallery {
 	}
 
 	resetImages() {
-		CCUtil.removeElementChildren(this.config.containerId);		
+		CCUtil.removeElementChildren(this.config.advancedConfig.galleryContainerId);
+		this.thumbnails = [];		
 
 		if (this.preloader != null) {			
 			// re-center preloader in case browser resized
@@ -368,6 +441,163 @@ export class CCGallery {
 	}
 }
 
+export class CCScreenSaverConfig {
+	// is screensaver enabled? note: checked at system boot time, not runtime configurable
+	enabled = true;
+	// how long do we delay before animating next thumbnail?
+	runIntervalMillis = 5000;
+	// min x-coord pixel distance from previous thumbnail when choosing next thumbnail
+	minXDistanceFromLastThumbnail = 150;
+	// min y-coord pixel distance from previous thumbnail when choosing next thumbnail
+	minYDistanceFromLastThumbnail = 150;
+	// how long should the enlarging resize animation last?
+	enlargeTimeMillis = 3000;
+	// how long should we delay after enlarge and before shrink?
+	pauseTimeMillis = 5000;
+	// how long should the shrinking resize animation last?
+	shrinkTimeMillis = 2000;	
+}
+
+export class CCScreenSaver {
+	galleryManager = null;
+	running = false;
+	lastThumbnail = null;
+	config = null;
+	zIndexOffset = 10;
+
+	constructor(ccGalleryManager, ccScreenSaverConfig) {
+		this.galleryManager = ccGalleryManager;
+		this.config = ccScreenSaverConfig;
+	}
+
+	start() {
+		this.running = true;
+		this.run();
+	}
+
+	stop() {
+		this.running = false;
+	}
+
+	// animate a single thumbnail enlarging / shrinking
+	run() {
+		if (this.running == false) {
+			return;
+		}
+
+		// try to find a thumbnail to animate that's far enough away from
+		// our previous thumbnail
+		let thumbnailIndex = null;
+		for (let i = 0; i < 10; i++) {
+			thumbnailIndex = this.getNextThumbnailIndexToAnimate();
+			if (thumbnailIndex != null) {
+				break;
+			}
+		}
+
+		if (thumbnailIndex == null) {			
+			setTimeout(() => { this.run(); }, this.config.runIntervalMillis);
+			return;
+		}
+
+		this.zIndexOffset += 10;
+		if (this.zIndexOffset > 50) {
+			this.zIndexOffset = 10;
+		}
+
+		const randomWaitTime = Math.floor(Math.random() * 1000);			
+		setTimeout(() => { this.animateThumbnail(this.zIndexOffset, thumbnailIndex); }, randomWaitTime);
+
+		setTimeout(() => { this.run(); }, this.config.runIntervalMillis);
+	}
+
+	getNextThumbnailIndexToAnimate() {
+		let thumbnailIndex = this.getRandomThumbnailIndex();
+		if (thumbnailIndex == null) {
+			return null;
+		}
+
+		let currentThumbnail = this.getThumbnail(thumbnailIndex);
+		if (currentThumbnail == null) {
+			return null;
+		}
+
+		// if the thumbnail is too close to the last one we animated
+		// then skip this one
+		if (this.lastThumbnail != null) {
+			let xDistance = Math.abs(this.lastThumbnail.x - currentThumbnail.x);
+			let yDistance = Math.abs(this.lastThumbnail.y - currentThumbnail.y);
+			if (xDistance < this.config.minXDistanceFromLastThumbnail 
+				|| yDistance < this.config.minYDistanceFromLastThumbnail) {
+				return null;
+			}
+		}
+
+		this.lastThumbnail = currentThumbnail;
+
+		return thumbnailIndex;
+	}
+
+	getThumbnails() {
+		let gallery = this.galleryManager.currentGallery;
+		if(gallery == null) {
+			return null;
+		}
+
+		let thumbnails = gallery.thumbnails;
+		if (thumbnails == null || thumbnails.length == 0) {
+			return null;
+		}
+
+		return thumbnails;
+	}
+
+	getRandomThumbnail() {
+		let thumbnailIndex = this.getRandomThumbnailIndex();
+		let thumbnail = this.getThumbnail(thumbnailIndex);
+		return thumbnail;
+	}
+
+	getRandomThumbnailIndex() {		
+		let thumbnails = this.getThumbnails();
+		if (thumbnails != null && thumbnails.length != 0) {
+			let randomThumbNailIndex = Math.floor(Math.random() * thumbnails.length);
+			return randomThumbNailIndex;
+		}
+		return null;
+	}
+
+	getThumbnail(thumbnailIndex) {
+		if (thumbnailIndex == null) {
+			return null;
+		}
+		let thumbnails = this.getThumbnails();
+		if (thumbnails == null || thumbnails.length == 0 || thumbnailIndex >= thumbnails.length) {
+			return null;
+		}
+		let thumbnail = thumbnails[thumbnailIndex];
+		return thumbnail;
+	}
+
+	animateThumbnail(zIndexOffset, thumbnailIndex) {
+		let ccThumbnail = this.getThumbnail(thumbnailIndex);
+		if (ccThumbnail != null) {
+			let enlargeTimeMillis = this.config.enlargeTimeMillis;
+			let pauseTimeMillis = this.config.pauseTimeMillis;
+			let shrinkTimeMillis = this.config.shrinkTimeMillis;
+			ccThumbnail.enlarge(enlargeTimeMillis, zIndexOffset, 50);			
+			setTimeout(() => { ccThumbnail.shrink(shrinkTimeMillis); }, pauseTimeMillis);
+		}
+	}
+}
+
+export class CCMenuConfig {
+	enabled = true;
+	buttonContent = "&#9776;";
+	galleriesTitle = "Galleries";
+	menuContainerId = "ccGalleryMenu";
+}
+
 export class CCMenuManager {
 	config = null;
 	galleryNames = [];
@@ -375,9 +605,9 @@ export class CCMenuManager {
 	currentGalleryIndex = 0;	
 	menuListWindow = null;
 	
-	constructor(ccGalleryManager, ccGalleryConfig, galleryNames) {
+	constructor(ccGalleryManager, ccMenuConfig, galleryNames) {
 		this.galleryManager = ccGalleryManager;
-		this.config = ccGalleryConfig;
+		this.config = ccMenuConfig;
 		if (galleryNames != null) {
 			this.galleryNames = galleryNames;
 		}
@@ -385,10 +615,10 @@ export class CCMenuManager {
 
 	initializeMenu() {
 		let menuContainer = document.createElement("div");
-		menuContainer.id = this.config.menuContainerId;
+		menuContainer.id = this.config.menuConfig.menuContainerId;
 
 		let menuActivationLink = document.createElement("a");
-		menuActivationLink.innerHTML = this.config.menuButtonContent;
+		menuActivationLink.innerHTML = this.config.menuConfig.buttonContent;
 		menuActivationLink.onclick = () => { this.showMenuList(); };
 		menuContainer.appendChild(menuActivationLink);
 
@@ -401,10 +631,10 @@ export class CCMenuManager {
 		this.menuListWindow.id = "ccGalleryMenuWindow";
 		this.menuListWindow.classList.add("ccGalleryMenuWindow");
 
-		if (this.config.menuGalleriesTitle != null) {
+		if (this.config.menuConfig.galleriesTitle != null) {
 			let menuListWindowTitle = document.createElement("h1");
 			menuListWindowTitle.classList.add("ccGalleryMenuTitle");
-			menuListWindowTitle.innerHTML = this.config.menuGalleriesTitle;
+			menuListWindowTitle.innerHTML = this.config.menuConfig.galleriesTitle;
 			this.menuListWindow.appendChild(menuListWindowTitle);
 		}
 
@@ -455,13 +685,14 @@ export class CCGalleryManager {
 	galleries = [];
 	currentGallery = null;
 	menuManager = null;
+	screenSaver = null;
 	
 	constructor(ccGalleryConfig) {
 		if (ccGalleryConfig == null) {
 			ccGalleryConfig = new CCGalleryConfig();
 		}		
 		this.config = ccGalleryConfig;
-		this.galleryJsonFileURL = this.config.galleryUrlPrefix + "/" + this.config.galleryIndexJSONFile;	
+		this.galleryJsonFileURL = this.config.advancedConfig.galleryUrlPrefix + "/" + this.config.advancedConfig.galleryIndexJSONFile;	
 	}
 
 	initializePageHandlers() {
@@ -473,7 +704,7 @@ export class CCGalleryManager {
 	showGallery(galleryName) {
 		for (let gallery of this.galleries) {
 			if (gallery.galleryName == galleryName) {
-				console.log("Showing gallery: " + this.currentGallery.galleryName);
+				console.log("Showing gallery: " + galleryName);
 				if (this.currentGallery != null) {
 					this.currentGallery.unload();
 				}
@@ -488,41 +719,57 @@ export class CCGalleryManager {
 		for (let galleryName of galleriesIndex.galleryNames) {
 			console.log("Loading gallery '" + galleryName + "'");
 			let ccGallery = new CCGallery(this.config, galleryName);
-			if (this.currentGallery == null) {
-				this.currentGallery = ccGallery;
-				ccGallery.load();
-			}
 			this.galleries.push(ccGallery);
+			if (this.currentGallery == null) {
+				this.showGallery(galleryName);
+			}
 		}
-		if (this.config.menuSupported == true) {
+		if (this.config.menuConfig != null && this.config.menuConfig.enabled == true) {
+			console.log("Menu is enabled");
 			this.menuManager = new CCMenuManager(this, this.config, galleriesIndex.galleryNames);
 			this.menuManager.initializeMenu();
+		} else {
+			console.log("Menu is disabled");
 		}
+		if (this.config.screenSaverConfig != null && this.config.screenSaverConfig.enabled == true) {
+			console.log("Screensaver is enabled, starting it");
+			this.screenSaver = new CCScreenSaver(this, this.config.screenSaverConfig);
+			setTimeout(() => { this.screenSaver.start(); }, 1000);
+		} else {
+			console.log("Screensaver is disabled");
+		}
+
+	}
+}
+
+export class CCAdvancedConfig {
+	isMobile = null;
+	galleryContainerId = "ccGalleryContainer";
+	preloaderId = "ccGalleryPreloader";
+	preloaderImageURL = "img/loading.gif";
+	photoOverlayId = "ccGalleryPhotoOverlay";
+	galleryJSONFile = "gallery.json"
+	galleryIndexJSONFile = "gallery-index.json"
+	centeredBigImageYOffset = 0;
+	galleryUrlPrefix = "gallery"
+	constructor() {
+		this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);		
+		this.centeredBigImageYOffset = this.isMobile ? 50 : 0;
 	}
 }
 
 export class CCGalleryConfig {
 	galleryParentId = "gallery";
-	downloadsEnabled = true;
-	containerId = "ccGalleryContainer";
-	preloaderId = "ccGalleryPreloader";
-	preloaderImageURL = "img/loading.gif";
-	photoOverlayId = "ccGalleryPhotoOverlay";
-	phootOverlayContent = null;	
-	isMobile = null;
-	onImageLoadOpacity = 1.0;
-	galleryUrlPrefix = "gallery"
-	galleryJSONFile = "gallery.json"
-	galleryIndexJSONFile = "gallery-index.json"
-	menuSupported = true;
-	menuButtonContent = "&#9776;";
-	menuGalleriesTitle = "GALLERIES";
-	menuContainerId = "ccGalleryMenu";
-	centeredBigImageYOffset = 0;	
+	photoOverlayContent = null;			
+	screenSaverConfig = null;
+	menuConfig = null;
+	advancedConfig = null;
 
 	constructor() {
-		this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);		
-		this.onImageLoadOpacity = this.isMobile ? 1.0 : 0.5;
-		this.centeredBigImageYOffset = this.isMobile ? 50 : 0;
+		this.screenSaverConfig = new CCScreenSaverConfig();
+		this.screenSaverConfig.enabled = true;
+		this.menuConfig = new CCMenuConfig();
+		this.menuConfig.enabled = true;
+		this.advancedConfig = new CCAdvancedConfig();
 	}
 }

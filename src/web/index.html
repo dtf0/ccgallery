@@ -14,7 +14,9 @@
 	import { CCGalleryManager, CCGalleryConfig } from './CCGallery.js';
 	var galleryConfig = new CCGalleryConfig();
 	// galleryConfig.photoOverlayContent = "<div class='footer'><a href='#''>order a print</a></div>";
-	galleryConfig.menuGalleriesTitle = null;
+	galleryConfig.menuConfig.galleriesTitle = null;
+	galleryConfig.menuConfig.enabled = true;
+	galleryConfig.screenSaverConfig.enabled = true;
 	var galleryManager = new CCGalleryManager(galleryConfig);
 	galleryManager.initializePageHandlers();
 </script>
