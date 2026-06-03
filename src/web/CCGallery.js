@@ -477,10 +477,12 @@ export class CCScreenSaver {
 	lastThumbnail = null;
 	config = null;
 	zIndexOffset = 10;
+	menuManager = null;
 
-	constructor(ccGalleryManager, ccScreenSaverConfig) {
+	constructor(ccGalleryManager, ccScreenSaverConfig, ccMenuManager) {
 		this.galleryManager = ccGalleryManager;
 		this.config = ccScreenSaverConfig;
+		this.menuManager = ccMenuManager;
 	}
 
 	start() {
@@ -642,15 +644,24 @@ export class CCMenuManager {
 		}
 	}
 
-	initializeMenu() {
-		let menuContainer = document.createElement("div");
-		menuContainer.id = this.config.menuConfig.menuContainerId;
+	initializeMenu() {				
+		this.initializeMenuActivationLinkDOM();
+		this.initializeMenuListDOM();
+	}
+
+	initializeMenuActivationLinkDOM() {
+		this.menuActivationLinkContainer = document.createElement("div");
+		this.menuActivationLinkContainer.id = this.config.menuConfig.menuContainerId;
 
 		let menuActivationLink = document.createElement("a");
 		menuActivationLink.innerHTML = this.config.menuConfig.buttonContent;
 		menuActivationLink.onclick = () => { this.showMenuList(); };
-		menuContainer.appendChild(menuActivationLink);
+		this.menuActivationLinkContainer.appendChild(menuActivationLink);
+		let parentNode = document.getElementById(this.config.galleryParentId).parentNode;
+		parentNode.appendChild(this.menuActivationLinkContainer);
+	}
 
+	initializeMenuListDOM() {
 		this.menuListWindowHolder = document.createElement("div");
 		this.menuListWindowHolder.id = "ccGalleryMenuWindowHolder";
 		this.menuListWindowHolder.classList.add("ccGalleryMenuWindowHolder");
@@ -679,11 +690,11 @@ export class CCMenuManager {
 		}
 
 		let parentNode = document.getElementById(this.config.galleryParentId).parentNode;
-		parentNode.appendChild(menuContainer);
 		parentNode.appendChild(this.menuListWindowHolder);
 		parentNode.appendChild(this.menuListWindow);
+		CCUtil.centerElement(this.menuListWindow);	
+	}
 
-		CCUtil.centerElement(this.menuListWindow);		
 	}
 
 	showMenuList() {
@@ -714,6 +725,7 @@ export class CCGalleryManager {
 	
 	galleryJsonFileURL = null;
 	galleries = [];
+	galleryNames = [];
 	currentGallery = null;
 	menuManager = null;
 	screenSaver = null;
@@ -728,54 +740,60 @@ export class CCGalleryManager {
 
 	initializePageHandlers() {
 		window.ccGalleryManager = this;
-		window.onload = () => { this.firstLoadHandler(); };
-		window.onresize = () => { this.currentGallery.resetImages(); }
+		window.addEventListener("load", () => { this.pageLoadHandler(); });
+		window.addEventListener("resize", () => { this.currentGallery.resetImages(); });
+	}	
+
+	async pageLoadHandler() {
+		await this.initializeGalleries();
+		this.initializeMenu();
+		this.initializeScreenSaver();
 	}
 
-	showGallery(galleryName) {
-		for (let gallery of this.galleries) {
-			if (gallery.galleryName == galleryName) {
-				console.log("Showing gallery: " + galleryName);
-				if (this.currentGallery != null) {
-					this.currentGallery.unload();
-				}
-				this.currentGallery = gallery;
-				this.currentGallery.load();
-			}
-		}
-	}
-
-	async firstLoadHandler() {
+	async initializeGalleries() {
 		let galleriesIndex = await CCUtil.loadJSON(this.galleryJsonFileURL);
-		let galleryNames = [];		
+		this.galleryNames = [];		
 		for (let galleryName of galleriesIndex.galleryNames) {
 			console.log("Loading gallery '" + galleryName + "'");
 			let ccGallery = new CCGallery(this.config, galleryName);
 			this.galleries.push(ccGallery);
-			galleryNames.push(galleryName);
+			this.galleryNames.push(galleryName);
 		}		
 		if (this.config.allGalleryEnabled == true) {
 			let allGallery = await this.createAllGallery();
 			this.galleries.unshift(allGallery);
-			galleryNames.unshift("All");
+			this.galleryNames.unshift("All");
 		}
 		if (this.galleries.length > 0) {
 			this.showGallery(this.galleries[0].galleryName);
 		}
-		if (this.config.menuConfig != null && this.config.menuConfig.enabled == true) {
-			console.log("Menu is enabled");
-			this.menuManager = new CCMenuManager(this, this.config, galleryNames);
-			this.menuManager.initializeMenu();
-		} else {
+	}
+
+	initializeMenu() {
+		if (this.config.menuConfig == null || this.config.menuConfig.enabled == false) {
 			console.log("Menu is disabled");
+			return;
 		}
-		if (this.config.screenSaverConfig != null && this.config.screenSaverConfig.enabled == true) {
-			console.log("Screensaver is enabled, starting it");
-			this.screenSaver = new CCScreenSaver(this, this.config.screenSaverConfig);
-			setTimeout(() => { this.screenSaver.start(); }, 1000);
-		} else {
+
+		let galleryCount = this.galleryNames == null ? 0 : this.galleryNames.length;
+		if (galleryCount < 2) {
+			console.log("Menu is disabled (only " + galleryCount + " gallery configured)");
+			return;
+		}
+
+		console.log("Menu is enabled");
+		this.menuManager = new CCMenuManager(this, this.config, this.galleryNames);
+		this.menuManager.initializeMenu();
+	}
+
+	initializeScreenSaver() {
+		if (this.config.screenSaverConfig == null || this.config.screenSaverConfig.enabled == false) {
 			console.log("Screensaver is disabled");
+			return;
 		}
+		console.log("Screensaver is enabled, starting it");
+		this.screenSaver = new CCScreenSaver(this, this.config.screenSaverConfig, this.menuManager);
+		setTimeout(() => { this.screenSaver.start(); }, 1000);		
 	}
 
 	async createAllGallery() {
@@ -798,6 +816,19 @@ export class CCGalleryManager {
 		const end = performance.now();
 		console.log("Finished creating 'all' gallery in " + (end - start) + "ms");
 		return allGallery;
+	}
+
+	showGallery(galleryName) {
+		for (let gallery of this.galleries) {
+			if (gallery.galleryName == galleryName) {
+				console.log("Showing gallery: " + galleryName);
+				if (this.currentGallery != null) {
+					this.currentGallery.unload();
+				}
+				this.currentGallery = gallery;
+				this.currentGallery.load();
+			}
+		}
 	}
 }
 
