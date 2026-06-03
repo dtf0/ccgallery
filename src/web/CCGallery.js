@@ -478,6 +478,7 @@ export class CCScreenSaver {
 	config = null;
 	zIndexOffset = 10;
 	menuManager = null;
+	mouseMoveTimer = null;
 
 	constructor(ccGalleryManager, ccScreenSaverConfig, ccMenuManager) {
 		this.galleryManager = ccGalleryManager;
@@ -488,6 +489,37 @@ export class CCScreenSaver {
 	start() {
 		this.running = true;
 		this.run();
+		this.initializeMouseMoveHandler();
+	}
+
+	initializeMouseMoveHandler() {
+		// don't auto-hide menu/cursor on mobile
+		if (this.galleryManager.config.advancedConfig.isMobile == true) {
+			return;
+		} 
+		if (this.menuManager != null) {
+			this.menuManager.hideMenuActivationLink(true);
+		}
+
+		// if user is idle for 3 seconds and we have screensaver, hide the menu
+		let mouseMoveHandler = () => {
+			if (this.mouseMoveTimer != null) {
+				clearTimeout(this.mouseMoveTimer);
+			}
+			document.body.style.cursor = 'default';
+			if (this.menuManager != null) {
+				this.menuManager.showMenuActivationLink();
+			}			
+			this.mouseMoveTimer = setTimeout(() => {				
+				if (this.menuManager != null) {
+					this.menuManager.hideMenuList();
+					this.menuManager.hideMenuActivationLink(false);
+				}
+				document.body.style.cursor = 'none';
+			}, 3000);
+		};
+
+		document.addEventListener("mousemove", mouseMoveHandler);
 	}
 
 	stop() {
@@ -635,6 +667,7 @@ export class CCMenuManager {
 	galleryManager = null;
 	currentGalleryIndex = 0;	
 	menuListWindow = null;
+	mouseMoveTimer = null;
 	
 	constructor(ccGalleryManager, ccMenuConfig, galleryNames) {
 		this.galleryManager = ccGalleryManager;
@@ -647,6 +680,7 @@ export class CCMenuManager {
 	initializeMenu() {				
 		this.initializeMenuActivationLinkDOM();
 		this.initializeMenuListDOM();
+		this.initializeMouseMoveHandler();	
 	}
 
 	initializeMenuActivationLinkDOM() {
@@ -695,6 +729,40 @@ export class CCMenuManager {
 		CCUtil.centerElement(this.menuListWindow);	
 	}
 
+	initializeMouseMoveHandler() {
+		// don't auto-hide menu/cursor on mobile
+		if (this.galleryManager.config.advancedConfig.isMobile == true) {
+			return;
+		} 
+		this.hideMenuActivationLink(true);
+
+		// if user is idle for 3 seconds hide the menu
+		let mouseMoveHandler = () => {
+			if (this.mouseMoveTimer != null) {
+				clearTimeout(this.mouseMoveTimer);
+			}
+			this.showMenuActivationLink();
+			this.mouseMoveTimer = setTimeout(() => {				
+				this.hideMenuList();
+				this.hideMenuActivationLink(false);
+			}, 3000);
+		};
+
+		document.addEventListener("mousemove", mouseMoveHandler);
+	}
+
+	showMenuActivationLink() {
+		$(this.menuActivationLinkContainer).stop(); // stop current animation if any
+		this.menuActivationLinkContainer.style.opacity = "1.0";
+	}
+
+	hideMenuActivationLink(immediately) {		
+		$(this.menuActivationLinkContainer).stop(); // stop current animation if any
+		if (immediately) {
+			this.menuActivationLinkContainer.style.opacity = "0.0";
+		} else {
+			$(this.menuActivationLinkContainer).animate( { "opacity":'0.0' }, "slow");
+		}
 	}
 
 	showMenuList() {
