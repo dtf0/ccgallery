@@ -4,10 +4,11 @@
   "description": "A simple web gallery generator",
   "author": "Jason Baker",
   "type": "commonjs",
-  "main": "index.js",
   "scripts": {
-    "build_gallery": "node src/BuildGallery.js",
-    "test_build_gallery": "node src/BuildGallery.js example-images dist/gallery"
+    "build": "npm run build_example_gallery && npm run build_web && npm run start_web_server",
+    "build_web": "./build_web.sh",
+    "build_example_gallery": "node src/BuildGallery.js example-images dist/gallery",
+    "start_web_server": "./run_server.sh dist/"
   },
   "dependencies": {
     "sharp": "^0.34.5"
