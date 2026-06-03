@@ -1,17 +1,18 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-	<title>some photos by [your name here]</title>
+	<title>some photos</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<script src="jquery-1.11.3.min.js"></script>
-	<link rel="stylesheet" href="stylesheet.css">
+	<script src="js/jquery-1.11.3.min.js"></script>
+	<link rel="stylesheet" href="CCGallery.css">
 </head>
 <body id="body">
 	<div id="gallery"></div>
 </body>
 
 <script type="module">
-	import { CCGalleryManager, CCGalleryConfig } from './CCGallery.js';
+	import { CCGalleryConfig } from './js/CCGalleryConfig.js';
+	import { CCGalleryManager } from './js/CCGallery.js';
 
 	var galleryConfig = new CCGalleryConfig();
 	galleryConfig.thumbnailBorderPixels = 2;
@@ -21,13 +22,15 @@
 	galleryConfig.screenSaverConfig.enabled = true;
 	galleryConfig.screenSaverConfig.runIntervalMillis = 2000;
 	galleryConfig.allGalleryEnabled = false;
-	galleryConfig.advancedConfig.gallerySpecificRowHeightsPixels["Daisy"] = 100;
-	galleryConfig.advancedConfig.gallerySpecificRowHeightsPixels["Chickens"] = 150;
-	galleryConfig.advancedConfig.gallerySpecificRowHeightsPixels["Home"] = 150;
+	galleryConfig.advancedConfig.gallerySpecificRowHeightsPixels["Misc"] = 100;
+	galleryConfig.advancedConfig.gallerySpecificRowHeightsPixels["More"] = 150;
 	galleryConfig.advancedConfig.gallerySpecificRowHeightsPixels["Nature"] = 150;
-	galleryConfig.advancedConfig.gallerySpecificRowHeightsPixels["Etc"] = 100;
 	galleryConfig.advancedConfig.showGithubLink = true;
 	// galleryConfig.photoOverlayContent = "<div class='footer'><a href='#''>order a print</a></div>";
+
+	// log the full config to js console with this helper if you want
+	// pass in 'true' if you want json string version of the config logged
+	galleryConfig.logToConsole(true); 
 
 	var galleryManager = new CCGalleryManager(galleryConfig);
 	galleryManager.initializePageHandlers();
