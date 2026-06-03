@@ -723,6 +723,14 @@ export class CCMenuManager {
 			this.menuListWindow.appendChild(menuListAlbumLink);
 		}
 
+		if (this.config.advancedConfig.showGithubLink == true) {
+			let githubLink = document.createElement("a");
+			githubLink.classList.add("githubLink");
+			githubLink.href = "https://github.com/codercowboy/ccgallery";
+			githubLink.innerHTML = "<img src='img/github.png' />";
+			this.menuListWindow.appendChild(githubLink);
+		}
+
 		let parentNode = document.getElementById(this.config.galleryParentId).parentNode;
 		parentNode.appendChild(this.menuListWindowHolder);
 		parentNode.appendChild(this.menuListWindow);
@@ -911,6 +919,7 @@ export class CCAdvancedConfig {
 	centeredBigImageYOffset = 0;
 	galleryUrlPrefix = "gallery"
 	gallerySpecificRowHeightsPixels = {};
+	showGithubLink = false;
 	constructor() {
 		this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);		
 		this.centeredBigImageYOffset = this.isMobile ? 50 : 0;
