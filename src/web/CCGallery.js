@@ -41,7 +41,10 @@ export class CCGalleryThumbnail {
 
 		thumbnailImg.onload = this.handleOnLoad;
 		if (!this.ccGallery.config.advancedConfig.isMobile) {
-			thumbnailImg.onmouseover = () => { this.enlarge(200, 200, 15);} ;
+			thumbnailImg.onmouseover = () => { 
+				this.ccGallery.lastHoveredThumbnail = this;
+				this.enlarge(200, 200, 15); 
+			};
 			thumbnailImg.onmouseout = () => { this.shrink(400); };
 		}
 		thumbnailImg.onclick = this.handleOnClick;
@@ -299,6 +302,7 @@ export class CCGallery {
 	photoOverlay = null;
 	images = [];
 	imagesLoaded = false;
+	lastHoveredThumbnail = null;
 
 	constructor(galleryConfig, galleryName) {
 		this.config = galleryConfig;
@@ -477,13 +481,11 @@ export class CCScreenSaver {
 	lastThumbnail = null;
 	config = null;
 	zIndexOffset = 10;
-	menuManager = null;
 	mouseMoveTimer = null;
 
-	constructor(ccGalleryManager, ccScreenSaverConfig, ccMenuManager) {
+	constructor(ccGalleryManager, ccScreenSaverConfig) {
 		this.galleryManager = ccGalleryManager;
 		this.config = ccScreenSaverConfig;
-		this.menuManager = ccMenuManager;
 	}
 
 	start() {
@@ -493,29 +495,27 @@ export class CCScreenSaver {
 	}
 
 	initializeMouseMoveHandler() {
-		// don't auto-hide menu/cursor on mobile
+		// don't auto-hide cursor on mobile
 		if (this.galleryManager.config.advancedConfig.isMobile == true) {
 			return;
 		} 
-		if (this.menuManager != null) {
-			this.menuManager.hideMenuActivationLink(true);
-		}
 
-		// if user is idle for 3 seconds and we have screensaver, hide the menu
+		// if user is idle for 3 seconds and we have screensaver, hide the mouse cursor
 		let mouseMoveHandler = () => {
 			if (this.mouseMoveTimer != null) {
 				clearTimeout(this.mouseMoveTimer);
 			}
 			document.body.style.cursor = 'default';
-			if (this.menuManager != null) {
-				this.menuManager.showMenuActivationLink();
-			}			
-			this.mouseMoveTimer = setTimeout(() => {				
-				if (this.menuManager != null) {
-					this.menuManager.hideMenuList();
-					this.menuManager.hideMenuActivationLink(false);
-				}
+			this.mouseMoveTimer = setTimeout(() => {
 				document.body.style.cursor = 'none';
+				// shrink last hovered thumbnail
+				let currentGallery = this.galleryManager.currentGallery;
+				if (currentGallery != null) {
+					let lastHoveredThumbnail = currentGallery.lastHoveredThumbnail; 
+					if (lastHoveredThumbnail != null) {
+						lastHoveredThumbnail.shrink(400);
+					}
+				}
 			}, 3000);
 		};
 
@@ -532,30 +532,33 @@ export class CCScreenSaver {
 			return;
 		}
 
-		// try to find a thumbnail to animate that's far enough away from
-		// our previous thumbnail
-		let thumbnailIndex = null;
-		for (let i = 0; i < 10; i++) {
-			thumbnailIndex = this.getNextThumbnailIndexToAnimate();
-			if (thumbnailIndex != null) {
-				break;
+		try {
+			// try to find a thumbnail to animate that's far enough away from
+			// our previous thumbnail
+			let thumbnailIndex = null;
+			for (let i = 0; i < 10; i++) {
+				thumbnailIndex = this.getNextThumbnailIndexToAnimate();
+				if (thumbnailIndex != null) {
+					break;
+				}
 			}
-		}
 
-		if (thumbnailIndex == null) {			
+			if (thumbnailIndex == null) {			
+				return;
+			}
+
+			this.zIndexOffset += 10;
+			if (this.zIndexOffset > 50) {
+				this.zIndexOffset = 10;
+			}
+
+			const randomWaitTime = Math.floor(Math.random() * 1000);			
+			setTimeout(() => { this.animateThumbnail(this.zIndexOffset, thumbnailIndex); }, randomWaitTime);
+		} catch (ex) {
+			console.log("Error while running screensaver", ex);
+		} finally {		
 			setTimeout(() => { this.run(); }, this.config.runIntervalMillis);
-			return;
 		}
-
-		this.zIndexOffset += 10;
-		if (this.zIndexOffset > 50) {
-			this.zIndexOffset = 10;
-		}
-
-		const randomWaitTime = Math.floor(Math.random() * 1000);			
-		setTimeout(() => { this.animateThumbnail(this.zIndexOffset, thumbnailIndex); }, randomWaitTime);
-
-		setTimeout(() => { this.run(); }, this.config.runIntervalMillis);
 	}
 
 	getNextThumbnailIndexToAnimate() {
@@ -587,7 +590,7 @@ export class CCScreenSaver {
 
 	getThumbnails() {
 		let gallery = this.galleryManager.currentGallery;
-		if(gallery == null) {
+		if (gallery == null) {
 			return null;
 		}
 
@@ -596,8 +599,13 @@ export class CCScreenSaver {
 			return null;
 		}
 
-		let containerHeight = gallery.galleryContainer.clientHeight;
-		let containerWidth = gallery.galleryContainer.clientWidth;
+		let galleryContainer = gallery.galleryContainer;
+		if (galleryContainer == null) {
+			return null;
+		}
+
+		let containerHeight = galleryContainer.clientHeight;
+		let containerWidth = galleryContainer.clientWidth;
 
 		// filter out partially off-screen thumbails
 		let tmpThumbnails = [];
@@ -738,7 +746,7 @@ export class CCMenuManager {
 	}
 
 	initializeMouseMoveHandler() {
-		// don't auto-hide menu/cursor on mobile
+		// don't auto-hide menu on mobile
 		if (this.galleryManager.config.advancedConfig.isMobile == true) {
 			return;
 		} 
@@ -868,7 +876,7 @@ export class CCGalleryManager {
 			return;
 		}
 		console.log("Screensaver is enabled, starting it");
-		this.screenSaver = new CCScreenSaver(this, this.config.screenSaverConfig, this.menuManager);
+		this.screenSaver = new CCScreenSaver(this, this.config.screenSaverConfig);
 		setTimeout(() => { this.screenSaver.start(); }, 1000);		
 	}
 

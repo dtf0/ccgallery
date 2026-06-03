@@ -1,6 +1,6 @@
 * { margin:0; padding:0; color:#545454; font-family:'Courier New', monospace; }
-/*HTML, BODY { position:relative; overflow:hidden; }*/
-BODY { width:100%; height:100vh; background-color:gray; border:1% solid red; }
+
+BODY { position:fixed; width:calc(100vw); height:calc(100vh); background-color:gray; overflow:hidden; }
 
 A { color:white; text-decoration:none; }
 A:hover { color:grey; text-decoration:none; }
@@ -8,8 +8,9 @@ A:hover { color:grey; text-decoration:none; }
 A.githubLink IMG { width:30px; height:30px; }
 A.githubLink:hover IMG { width:30px; height:30px; opacity:0.5; }
 
-#ccGalleryContainer { position:fixed; background-color:white; z-index:1; overflow:hidden; 
-	width:calc(100vw); height:calc(100vh); }
+#gallery { position:relative; width:calc(100vw); height:calc(100vh); }
+
+#ccGalleryContainer { position:fixed; width:100%; height:100%; background-color:white; z-index:1; overflow:hidden; }
 #ccGalleryContainer IMG { margin:2px; position:absolute; }
 
 #ccGalleryPreloader { z-index:100; width:32px; height:32px; position:absolute; opacity:0.0; }
@@ -19,7 +20,7 @@ A.githubLink:hover IMG { width:30px; height:30px; opacity:0.5; }
 	width:calc(100% - 10px); text-align:right; padding:5px; }
 
 #ccGalleryMenu { z-index:1000; background-color:black; color:white; padding:0px 15px; padding-bottom:5px; border-radius:5px; 
-	font-size:2rem; position:absolute; bottom:5%; right:5%; }
+	font-size:2rem; position:fixed; bottom:5%; right:5%; }
 #ccGalleryMenuWindowHolder { position:absolute; top:0; left:0; width:100%; height:100%; background-color:black; }	
 #ccGalleryMenuWindow { background-color:black; color:white; position:absolute; min-width:150px; 
 	border-radius:3px; padding:2rem 3rem; }
