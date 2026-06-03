@@ -94,6 +94,7 @@ export class CCGalleryThumbnail {
 			"easing": "swing"
 		}
 
+		$(this.thumbnailImg).stop(); // stop current animation if any
 		this.thumbnailImg.style.opacity = 1.0;
 		$(this.thumbnailImg).animate(sizeAnimationConfig, animationTimeMillis);	
 	}
@@ -117,6 +118,7 @@ export class CCGalleryThumbnail {
 
 		if (animationTimeMillis < 500) {
 			sizeAnimationConfig.opacity = "0.5";
+			$(this.thumbnailImg).stop(); // stop current animation if any
 			$(this.thumbnailImg).animate(sizeAnimationConfig, animationTimeMillis, finishedCallback);
 		} else {
 			let opacityAnimationConfig = {
@@ -129,6 +131,7 @@ export class CCGalleryThumbnail {
 				$(this.thumbnailImg).animate(opacityAnimationConfig, opacityAnimationTime, finishedCallback);
 			}
 
+			$(this.thumbnailImg).stop(); // stop current animation if any			
 			$(this.thumbnailImg).animate(sizeAnimationConfig, animationTimeMillis, sizeAnimationFinishedCallback);
 		}
 	}
@@ -169,8 +172,8 @@ export class CCGalleryBigImage {
 		
 		scaledImage.style.zIndex = 500;		
 		scaledImage.style.opacity = "0.0";
-		scaledImage.style.width = this.ccThumbnail.imgData.thumbnail.width + "px";
-		scaledImage.style.height = this.ccThumbnail.imgData.thumbnail.height + "px";
+		scaledImage.style.width = this.ccThumbnail.width + "px";
+		scaledImage.style.height = this.ccThumbnail.height + "px";
 		scaledImage.style.left = this.ccThumbnail.x + "px";
 		scaledImage.style.top = this.ccThumbnail.y + "px";		
 		
