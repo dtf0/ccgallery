@@ -4,11 +4,11 @@ Tasks to complete sometime in the future
 ### Task to complete before finishing this round
 
 - [ ] Update readme
+- [ ] Add copyright to various files
 
-### Nice-to-haves in the future
+### Future Tasks
 
-- [ ] Refactor various config out of resize.js such as target resize height
-- [ ] Remove jquery / replace usage with css animations
+Nothing here! (yet..)
 
 ### Finished Tasks
 
@@ -33,3 +33,12 @@ June 1, 2026
 - [X] Add menu for selecting gallery
 - [X] Make max-size of original images be 2000 pixels height
 - [X] Rename resize.js to BuildGallery.js
+
+June 2, 2026
+
+- [X] Add screensaver mode
+- [X] Reorganize config to be more modular
+- [X] Make row height + border configurable
+- [X] Add "All" gallery mode
+- [X] Allow per-gallery row heights
+- [X] Add github link to project in menu

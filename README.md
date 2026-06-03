@@ -5,6 +5,8 @@ ccgallery
 
 <img style='width:300px' src="ccgallery-demo-small.gif"></img>
 
+If you're not reading this on github, the repo for this project is [https://github.com/codercowboy/ccgallery]().
+
 Setup
 =====
 
@@ -77,4 +79,5 @@ Credits
 =======
 
 - [CloudConvert's video to gif converter](https://cloudconvert.com/mov-to-gif) was used to make the demo gif
-- [Sharp image processing library](https://sharp.pixelplumbing.com/) resizes images
+- [Sharp image processing library](https://sharp.pixelplumbing.com/) is used to resize images
+- [Edent's Super Tiny Icons](https://github.com/edent/supertinyicons) provided tiny github icon
