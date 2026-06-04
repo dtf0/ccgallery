@@ -340,7 +340,7 @@ export class CCGalleryBigImage {
 		scaledImage.onload = this.handleScaledImageLoad;
 		scaledImage.onclick = () => { this.ccBigImage.ccGallery.hideBigImage; };
 		
-		scaledImage.style.zIndex = 500;		
+		scaledImage.style.zIndex = 900;		
 		scaledImage.style.opacity = "0.0";
 		scaledImage.style.width = this.ccThumbnail.width + "px";
 		scaledImage.style.height = this.ccThumbnail.height + "px";
@@ -393,7 +393,7 @@ export class CCGalleryBigImage {
 		bigImage.onload = this.handleBigImageLoad;
 		bigImage.onclick = () => { this.ccGallery.hideBigImage(); };
 		
-		bigImage.style.zIndex = 510;
+		bigImage.style.zIndex = 901;
 		bigImage.style.opacity = "0.0";
 		bigImage.style.width = this.bigImageConfig.w + "px";
 		bigImage.style.height = this.bigImageConfig.h + "px";
@@ -698,6 +698,9 @@ export class CCGallery {
 	`CCScreenSaver` uses its parent `CCGalleryMaanger` to orchestrate occasionally enlarging and
 	shrinking random thumbnails for the currently shown gallery, similar to the animations shown
 	when the user hovers their mouse over thumbnails
+
+	The screen saver also supports automatically refreshing the gallery's thumbnail layout
+	every so often to prevent screen burn in. 	
 */
 export class CCScreenSaver {
 	galleryManager = null;
@@ -706,6 +709,7 @@ export class CCScreenSaver {
 	config = null;
 	zIndexOffset = 10;
 	mouseMoveTimer = null;
+	mouseMoveEventListener = null;
 
 	constructor(ccGalleryManager, ccScreenSaverConfig) {
 		this.galleryManager = ccGalleryManager;
@@ -715,67 +719,148 @@ export class CCScreenSaver {
 	/* start the screensaver */
 	start() {
 		this.running = true;
-		this.run();
+		this.scheduleNextThumbnailHighlight();
+		this.scheduleNextScreenReset();
 		this.initializeMouseMoveHandler();
 	}
 
-	/* automatically hide the user's mouse when the user is idle */
+	/* stop the screen saver */
+	stop() {
+		this.running = false;
+		this.removeMouseMoveHandler();
+	}
+
+	/* add a mouse move listener that'll trigger hiding the mouse cursor when user is idle */
 	initializeMouseMoveHandler() {
 		// don't auto-hide cursor on mobile
 		if (this.galleryManager.config.advancedConfig.isMobile == true) {
 			return;
 		} 
 
-		// if user is idle for 3 seconds and we have screensaver, hide the mouse cursor
-		let mouseMoveHandler = () => {
-			// when mouse moves, cancel previous timer
-			if (this.mouseMoveTimer != null) {
-				clearTimeout(this.mouseMoveTimer);
-			}
-			
-			// mouse is moving, show default cursor
-			document.body.style.cursor = 'default';
-
-			// create timer to hide the mouse after 3 seconds
-			// (timer will be canceled above if user moves mouse
-			// before the 3 seconds elapse)
-			this.mouseMoveTimer = setTimeout(() => {
-				// when the timer elapses, hide the cursor
-				document.body.style.cursor = 'none';
-
-				// if the mouse was hovering over a thumbnail, shrink it back down to size
-				let currentGallery = this.galleryManager.currentGallery;
-				if (currentGallery != null) {
-					let lastHoveredThumbnail = currentGallery.lastHoveredThumbnail; 
-					if (lastHoveredThumbnail != null) {
-						lastHoveredThumbnail.shrink(400);
-					}
-				}
-			}, 3000);
-		};
+		this.mouseMoveEventListener = () => { this.handleMouseMove(); };
 
 		// add the mouse moving listener function to execute
 		// every time the user's mouse moves anywhere in the document
-		document.addEventListener("mousemove", mouseMoveHandler);
+		document.addEventListener("mousemove", this.mouseMoveEventListener);
 	}
 
-	/* stop the screen saver */
-	stop() {
-		this.running = false;
+	/* unregister mouse move handler */
+	removeMouseMoveHandler() {
+		if (this.mouseMoveTimer != null) {
+			clearTimeout(this.mouseMoveTimer);
+		}
+
+		if (this.mouseMoveEventListener != null) {
+			document.removeEventListener("mousemove", this.mouseMoveEventListener);
+		}		
+		this.showMouseCursor();
+		this.mouseMoveEventListener = null;
+	}
+
+	/* if user is idle for 3 seconds and we have screensaver, hide the mouse cursor */
+	handleMouseMove() {
+		// when mouse moves, cancel previous timer
+		if (this.mouseMoveTimer != null) {
+			clearTimeout(this.mouseMoveTimer);
+		}
+		
+		// mouse is moving, show default cursor
+		this.showMouseCursor();
+
+		// create timer to hide the mouse after 3 seconds
+		// (timer will be canceled above if user moves mouse
+		// before the 3 seconds elapse)
+		this.mouseMoveTimer = setTimeout(() => {
+			// when the timer elapses, hide the cursor
+			this.hideMouseCursor();
+
+			// if the mouse was hovering over a thumbnail, shrink it back down to size
+			let currentGallery = this.galleryManager.currentGallery;
+			if (currentGallery != null) {
+				let lastHoveredThumbnail = currentGallery.lastHoveredThumbnail; 
+				if (lastHoveredThumbnail != null) {
+					lastHoveredThumbnail.shrink(400);
+				}
+			}
+		}, 3000);
+	}
+
+	hideMouseCursor() {
+		document.body.style.cursor = 'none';
+	}
+
+	showMouseCursor() {
+		document.body.style.cursor = 'default';
+	}
+	
+	scheduleNextScreenReset() {
+		if (this.running != true) {
+			console.log("Not scheduling next screen saver reset, screen saver is stopped");
+			return;
+		}
+
+		if (this.config.screenResetEnabled != true) {
+			console.log("Not scheduling screen saver screen reset, it's disabled.");
+			return;
+		}
+		let resetPeriodSeconds = this.config.screenResetPeriodSeconds;
+		if (resetPeriodSeconds == null || resetPeriodSeconds <= 0) {
+			console.log("Not scheduling screen saver screen reset, reset period is zero or less: " + resetPeriodSeconds);
+			return;
+		}
+
+		console.log("Scheduling next screen saver screen reset " + resetPeriodSeconds + " seconds from now.");
+
+		let resetIntervalMillis = resetPeriodSeconds * 1000;
+		setTimeout(() => { this.resetScreen(); }, resetIntervalMillis);
+	}
+
+	resetScreen() {
+		if (this.running != true) {
+			console.log("Not resetting screen, screen saver is stopped");
+			return;
+		}
+		try {
+			let gallery = this.galleryManager.currentGallery;
+			if (gallery != null) {
+				console.log("Screensaver reseting screen, current gallery: " + gallery.galleryName);
+				this.galleryManager.showGallery(gallery.galleryName);
+			}
+		} catch (ex) {
+			console.log("Error during screensaver reset attempt", ex);
+		} finally {
+			this.scheduleNextScreenReset();			
+		}
+	}
+
+	scheduleNextThumbnailHighlight() {
+		if (this.running != true) {
+			console.log("Not scheduling next thumbnail highlight, screen saver is stopped");
+			return;
+		}
+		let highlightIntervalMillis = this.config.thumbnailHighlightIntervalMillis;
+		if (highlightIntervalMillis == null || highlightIntervalMillis <= 0) {
+			console.log("Not scheduling screen saver thumbnail highlight, highlight interval is zero or less: " + highlightIntervalMillis);
+			return;
+		}
+
+		// schedule next highlightThumbnail() call that'll animate the next thumbnail
+		setTimeout(() => { this.highlightThumbnail(); }, highlightIntervalMillis);
 	}
 
 	/* animate a single thumbnail enlarging / shrinking */
-	run() {
+	highlightThumbnail() {
 		if (this.running == false) {
+			console.log("Not highlighting next thumbnail, screen saver is stopped");
 			return;
 		}
 
 		try {
-			// try to find a thumbnail to animate that's far enough away from
+			// try to find a thumbnail to highlight that's far enough away from
 			// our previous thumbnail
 			let thumbnailIndex = null;
 			for (let i = 0; i < 10; i++) {
-				thumbnailIndex = this.getNextThumbnailIndexToAnimate();
+				thumbnailIndex = this.getNextThumbnailIndexToHighlight();
 				if (thumbnailIndex != null) {
 					break;
 				}
@@ -783,15 +868,14 @@ export class CCScreenSaver {
 
 			if (thumbnailIndex == null) {
 				// couldn't find a thumbnail to highlight
-				// this time, skip this run()			
+				// this time, skip this highlightThumbnail()			
 				return;
 			}
 
-			// make the newly highlighted thumbnail animate
-			// higher in the zindex layers than any previous
-			// thumbnails
+			// make the newly highlighted thumbnail animate higher
+			// in the zindex layers than any previous thumbnails
 			this.zIndexOffset += 10;
-			if (this.zIndexOffset > 50) {
+			if (this.zIndexOffset > 500) {
 				this.zIndexOffset = 10;
 			}
 
@@ -799,15 +883,14 @@ export class CCScreenSaver {
 			const randomWaitTime = Math.floor(Math.random() * 1000);			
 			setTimeout(() => { this.animateThumbnail(this.zIndexOffset, thumbnailIndex); }, randomWaitTime);
 		} catch (ex) {
-			console.log("Error while running screensaver", ex);
+			console.log("Error during screensaver thumbnail highlight attempt", ex);
 		} finally {		
-			// schedule next run() call that'll animate the next thumbnail
-			setTimeout(() => { this.run(); }, this.config.runIntervalMillis);
+			this.scheduleNextThumbnailHighlight();
 		}
 	}
 
 	/* find the next thumbnail to highlight */
-	getNextThumbnailIndexToAnimate() {
+	getNextThumbnailIndexToHighlight() {
 		let thumbnailIndex = this.getRandomThumbnailIndex();
 		if (thumbnailIndex == null) {
 			return null;
@@ -1056,10 +1139,10 @@ export class CCMenuManager {
 	/* show the menu popup window */
 	showMenuList() {
 		CCUtil.centerElement(this.menuListWindow);
-		this.menuListWindowBackground.style.zIndex = 200;
+		this.menuListWindowBackground.style.zIndex = 1000;
 		this.menuListWindowBackground.style.opacity = "0.0";
 		this.menuListWindow.style.opacity = "0.0";
-		this.menuListWindow.style.zIndex = 201;
+		this.menuListWindow.style.zIndex = 1001;
 		$(this.menuListWindowBackground).animate( { "opacity":'0.25' }, "slow");
 		$(this.menuListWindow).animate( { "opacity":'1.0' }, "slow");
 	}

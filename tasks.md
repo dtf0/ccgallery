@@ -1,11 +1,6 @@
 Tasks to complete sometime in the future
 ========================================
 
-### Task to complete before finishing this round
-
-- [ ] Update readme
-- [ ] Add copyright to various files
-
 ### Future Tasks
 
 Nothing here! (yet..)
@@ -42,3 +37,14 @@ June 2, 2026
 - [X] Add "All" gallery mode
 - [X] Allow per-gallery row heights
 - [X] Add github link to project in menu
+
+June 3, 2026
+
+- [X] Update readme
+- [X] Add copyright to various files
+- [X] Add feature for screen saver to reset all thumbnails every so often
+
+June 4, 2026
+
+- [X] Add screen saver reset screen mode to prevent screen burn in
+

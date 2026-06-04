@@ -60,7 +60,7 @@ export class CCScreenSaverConfig {
 	// is screensaver enabled? note: checked at system boot time, not runtime configurable
 	enabled = true;
 	// how long do we delay before animating next thumbnail?
-	runIntervalMillis = 5000;
+	thumbnailHighlightIntervalMillis = 5000;
 	// min x-coord pixel distance from previous thumbnail when choosing next thumbnail
 	minXDistanceFromLastThumbnail = 150;
 	// min y-coord pixel distance from previous thumbnail when choosing next thumbnail
@@ -70,5 +70,9 @@ export class CCScreenSaverConfig {
 	// how long should we delay after enlarge and before shrink?
 	pauseTimeMillis = 5000;
 	// how long should the shrinking resize animation last?
-	shrinkTimeMillis = 2000;	
+	shrinkTimeMillis = 2000;
+	// is periodic screen reset enabled? this prevents burn in on monitors running this for a long time
+	screenResetEnabled = true;	
+	// how long should we wait between resets, default here of 600 seconds is ten minutes
+	screenResetPeriodSeconds = 600;
 }

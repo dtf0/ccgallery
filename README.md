@@ -275,6 +275,8 @@ Here's a simplified example output from `logToConsole()`:
   "screenSaverConfig": {
     "enabled": true,
     "runIntervalMillis": 2000,
+    "screenResetEnabled": true,
+    "screenResetPeriodSeconds": 600
   },
   "menuConfig": {
     "enabled": true,
@@ -367,6 +369,16 @@ Enable or disable the `screen saver` mode, which periodically highlights random 
 `myConfig.screenSaverConfig.runIntervalMillis` (number, default: 2000)
 
 Controls how often the screen saver will start highlighting an image in the gallery. Set to smaller values (such as `500`) to highlight more images on screen at once.
+
+`myConfig.screenSaverConfig.screenResetEnabled` (boolean, default: true)
+
+Note: screen reset will not occur if the overall `screenSaverConfig.enabled` is false.
+
+Enable/disables periodic screen reset that'll reset all thumbnails randomly every so often, usefl to avoid screen burn in if the screen saver is running for hours. 
+
+`myConfig.screenSaverConfig.screenResetPeriodSeconds` (number, default: 600 )
+
+How often the screen reset happens, in seconds. Default of 600 seconds is ten minutes.
 
 *Advanced general configuration*
 
