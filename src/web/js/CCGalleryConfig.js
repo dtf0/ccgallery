@@ -5,10 +5,10 @@
 */
 
 export class CCGalleryConfig {
-	galleryParentId = "gallery";
-	allGalleryEnabled = true;
-	rowHeightPixels = 100;
-	thumbnailBorderPixels = 4;
+	galleryParentId = "ccGallery";
+	allGalleryEnabled = false;
+	rowHeightPixels = 50;
+	thumbnailBorderPixels = 2;
 	photoOverlayContent = null;			
 	screenSaverConfig = null;
 	menuConfig = null;
@@ -52,8 +52,8 @@ export class CCAdvancedConfig {
 export class CCMenuConfig {
 	enabled = true;
 	buttonContent = "&#9776;";
-	galleriesTitle = "Galleries";
-	menuContainerId = "ccGalleryMenu";
+	galleriesTitle = "Albums";
+	menuContainerId = "ccGalleryMenuButton";
 }
 
 export class CCScreenSaverConfig {

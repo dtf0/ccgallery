@@ -221,7 +221,7 @@ async function processGalleries(inputDirectory, outputDirectory) {
 }
 
 if (process.argv.length < 3) {
-  console.log("USAGE: node resize.js [input directory] [output directory]")
+  console.log("USAGE: node BuildGallery.js [input directory] [output directory]")
   return;
 }
 

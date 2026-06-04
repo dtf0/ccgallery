@@ -12,33 +12,64 @@
 	<link rel="stylesheet" href="CCGallery.css">
 </head>
 <body id="body">
-	<div id="gallery"></div>
+	<div id="ccGallery"></div>
 </body>
 
 <script type="module">
+	// load ccgallery code from the javascript files
 	import { CCGalleryConfig } from './js/CCGalleryConfig.js';
 	import { CCGalleryManager } from './js/CCGallery.js';
 
+	// create a CCGalleryConfig configuration object that we'll customize to 
+	// have ccgallery behave how we would prefer
 	var galleryConfig = new CCGalleryConfig();
-	galleryConfig.thumbnailBorderPixels = 2;
+	
+	// this is the name of the div that the gallery will be created in, 'gallery' in this index.html example
+	galleryConfig.galleryParentId = "ccGallery";
+	
+	/*
+	 *
+	 * NOTE: further config options below are totally optional, sensible defaults
+	 *       are automatically configured in CCGalleryConfig
+	 *
+	 */
+
+	// this is the default row height in pixels that'll be used for all albums unless
+	// a gallery has a 'gallerySpecificRowHeightsPixels' value specified (shown below later on)
 	galleryConfig.rowHeightPixels = 50;
-	galleryConfig.menuConfig.galleriesTitle = null;
+
+	// set this to 'false' to disable the menu popup, useful if you have a single gallery
 	galleryConfig.menuConfig.enabled = true;
+
+	// set this to 'false' to disable the screen saver mode that automatically highlights various images
 	galleryConfig.screenSaverConfig.enabled = true;
+
+	// if you want more images to be highlighted at a time by the screensaver, reduce this
 	galleryConfig.screenSaverConfig.runIntervalMillis = 2000;
-	galleryConfig.allGalleryEnabled = false;
+		
+	// if you want some html to show up at the bottom of the 'big' photos, set it like this (without comment..)
+	// galleryConfig.photoOverlayContent = "<div class='footer'><a href='#''>order a print</a></div>";
+
+	// if you want different height rows per gallery, you can specify those like this
+	// this first one means when the 'Misc' gallery album is shown, the row height for 
+	// the images in that album will be 100 pixels tall
 	galleryConfig.advancedConfig.gallerySpecificRowHeightsPixels["Misc"] = 100;
 	galleryConfig.advancedConfig.gallerySpecificRowHeightsPixels["More"] = 150;
 	galleryConfig.advancedConfig.gallerySpecificRowHeightsPixels["Nature"] = 150;
-	galleryConfig.advancedConfig.showGithubLink = true;
-	// galleryConfig.photoOverlayContent = "<div class='footer'><a href='#''>order a print</a></div>";
 
 	// log the full config to js console with this helper if you want
+	// it'll show you all possible configuration properties
+	// those properties are documented here: https://github.com/codercowboy/ccgallery
 	// pass in 'true' if you want json string version of the config logged
 	galleryConfig.logToConsole(true); 
 
+	// now that configurtion is ready, start our gallery
 	var galleryManager = new CCGalleryManager(galleryConfig);
 	galleryManager.initializePageHandlers();
+
+	// if for some reason you're creating this gallery after page load has happened, you'll still
+	// need to call initializePageHandlers() above, but then also call this:
+	//galleryManager.initialize();
 </script>
 
 </html>
