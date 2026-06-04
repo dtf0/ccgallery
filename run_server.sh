@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# run_server.sh - a generic script that starts the simple webserver that ships with python
+# Copyright 2026, Jason Baker (jason@onejasonforsale.com)
+# Github for this project: https://github.com/codercowboy/ccgallery
+
+
 PROJECT_HOME=$(dirname "${0}")
 
 if [ -z "${1}" ]; then

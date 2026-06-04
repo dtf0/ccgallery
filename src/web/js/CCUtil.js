@@ -3,6 +3,7 @@
 	Copyright 2026, Jason Baker (jason@onejasonforsale.com)
 	Github for this project: https://github.com/codercowboy/ccgallery
 */
+
 export default class CCUtil {
 	/*
 		Load a JSON file from the specified location

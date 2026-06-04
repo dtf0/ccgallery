@@ -1,3 +1,9 @@
+/*
+	CCGallery.js - ccgallery's main implementation classes
+	Copyright 2026, Jason Baker (jason@onejasonforsale.com)
+	Github for this project: https://github.com/codercowboy/ccgallery
+*/
+
 import CCUtil from "./CCUtil.js";
 
 export class CCGalleryThumbnail {

@@ -1,3 +1,9 @@
+#!/bin/bash
+
+# backup.sh - a fairly generic backup script from ccgallery project
+# Copyright 2026, Jason Baker (jason@onejasonforsale.com)
+# Github for this project: https://github.com/codercowboy/ccgallery
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FOLDER_BASENAME=`basename "${SCRIPT_DIR}"`
 DATE=$(date +"%Y%m%d-%H%M%S")

@@ -1,3 +1,10 @@
+/*
+  BuildGallery.js - nodejs tool to build web galleries for ccgallery
+  Copyright 2026, Jason Baker (jason@onejasonforsale.com)
+  Github for this project: https://github.com/codercowboy/ccgallery
+*/
+
+
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');

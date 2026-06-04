@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# build_web.sh - a fairly generic build script that copies static web assets to a dist folder
+# Copyright 2026, Jason Baker (jason@onejasonforsale.com)
+# Github for this project: https://github.com/codercowboy/ccgallery
+
 PROJECT_HOME=$(dirname "${0}")
 DIST_FOLDER="${PROJECT_HOME}/dist"
 WEB_SRC_FOLDER="${PROJECT_HOME}/src/web"

@@ -1,3 +1,9 @@
+/*
+	CCGalleryConfig.js - a collection of config classes for CCGallery
+	Copyright 2026, Jason Baker (jason@onejasonforsale.com)
+	Github for this project: https://github.com/codercowboy/ccgallery
+*/
+
 export class CCGalleryConfig {
 	galleryParentId = "gallery";
 	allGalleryEnabled = true;
