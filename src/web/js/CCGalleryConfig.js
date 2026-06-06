@@ -40,7 +40,7 @@ export class CCAdvancedConfig {
 	galleryJSONFile = "gallery.json"
 	galleryIndexJSONFile = "gallery-index.json"
 	centeredBigImageYOffset = 0;
-	galleryUrlPrefix = "../gallery"
+	galleryUrlPrefix = "gallery"
 	gallerySpecificRowHeightsPixels = {};
 	showGithubLink = false;
 	constructor() {
