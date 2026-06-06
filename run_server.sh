@@ -25,9 +25,9 @@ if [ ! -z ${2} ]; then
 	PORT="${2}"
 fi
 
-# check for python, 'which' will exit with 1 if it doesn't exist, which is stored in ${?}
-type python &> /dev/null
-if [ "1" = "${?}" ]; then
+# check for python -- command -v exits non-zero if the executable isn't on PATH.
+PYTHON="$(command -v python3 || command -v python)"
+if [ -z "${PYTHON}" ]; then
 	echo "Python isn't installed or accessible, can't host web server."
 	echo "Install it via something like apt on linux, homebrew on macos, or cygwin on windows"
 	exit 1
@@ -44,5 +44,4 @@ echo
 echo "http://localhost:${PORT}/"
 echo
 
-cd "${HOST_DIR}" && python -m http.server "${PORT}"
-
+cd "${HOST_DIR}" && "${PYTHON}" -m http.server "${PORT}"
