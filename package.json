@@ -7,7 +7,7 @@
   "scripts": {
     "build": "npm run build_example_gallery && npm run build_web && npm run start_web_server",
     "build_web": "./build_web.sh",
-    "build_example_gallery": "node src/BuildGallery.js example-images dist/gallery",
+    "build_example_gallery": "node src/BuildGallery.js example-images dist/web/gallery",
     "start_web_server": "./run_server.sh dist/"
   },
   "dependencies": {
